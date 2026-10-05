@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 启动窗口底色（防白闪）；页面的实际配色由代码中的 AppTheme 控制 -->
+    <color name="launch_bg">#F1F4F9</color>
+
+    <color name="primary_light">#2B5CFF</color>
+    <color name="primary_dark">#5B8CFF</color>
+    <color name="accent_light">#FF7A45</color>
+    <color name="accent_dark">#FFA171</color>
+
+    <!-- 按下态水印色：中性灰，覆盖主题默认的蓝色高亮，避免点击出现蓝边 -->
+    <color name="press_highlight">#14000000</color>
+    <color name="text_highlight">#332B5CFF</color>
+</resources>

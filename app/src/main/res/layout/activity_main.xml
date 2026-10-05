@@ -1,0 +1,932 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- ==================== 主内容（整页可滚动） ==================== -->
+    <LinearLayout
+        android:id="@+id/contentMain"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/scrollMain"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true"
+            android:overScrollMode="never"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- ========== 顶栏 ========== -->
+                <LinearLayout
+                    android:id="@+id/topBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingLeft="18dp"
+                    android:paddingRight="18dp"
+                    android:paddingTop="14dp"
+                    android:paddingBottom="12dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="设备账"
+                            android:textSize="24sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvSlogan"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="买了多久 · 花了多少 · 每天多少钱"
+                            android:textSize="12sp" />
+                    </LinearLayout>
+
+                    <FrameLayout
+                        android:id="@+id/btnTheme"
+                        android:layout_width="38dp"
+                        android:layout_height="38dp">
+
+                        <ImageView
+                            android:id="@+id/ivThemeIcon"
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="切换昼夜模式"
+                            android:src="@drawable/ic_sun" />
+                    </FrameLayout>
+
+                    <TextView
+                        android:id="@+id/btnAdd"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginLeft="10dp"
+                        android:gravity="center"
+                        android:paddingLeft="16dp"
+                        android:paddingRight="16dp"
+                        android:text="＋ 记一笔"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <!-- ========== 总览卡 ========== -->
+                <FrameLayout
+                    android:id="@+id/summaryCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="16dp"
+                    android:layout_marginRight="16dp">
+
+                    <View
+                        android:id="@+id/glow1"
+                        android:layout_width="150dp"
+                        android:layout_height="150dp"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="-52dp"
+                        android:layout_marginEnd="-30dp" />
+
+                    <View
+                        android:id="@+id/glow2"
+                        android:layout_width="84dp"
+                        android:layout_height="84dp"
+                        android:layout_gravity="start|top"
+                        android:layout_marginStart="-20dp"
+                        android:layout_marginTop="74dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="18dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tvSummaryLabel"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="设备总投入"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/tvCountBadge"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:includeFontPadding="false"
+                                android:paddingLeft="9dp"
+                                android:paddingRight="9dp"
+                                android:paddingTop="3dp"
+                                android:paddingBottom="3dp"
+                                android:text="0 台在册"
+                                android:textColor="#FFFFFF"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvTotalMoney"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:text="¥0"
+                            android:textColor="#FFFFFF"
+                            android:textSize="34sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tvAvgLabel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="日均合计"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/tvAvgMoney"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginLeft="6dp"
+                                android:text="¥0"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/rowBest"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tvBestTag"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:includeFontPadding="false"
+                                android:paddingLeft="7dp"
+                                android:paddingRight="7dp"
+                                android:paddingTop="2dp"
+                                android:paddingBottom="2dp"
+                                android:text="最划算"
+                                android:textColor="#FFFFFF"
+                                android:textSize="11sp" />
+
+                            <TextView
+                                android:id="@+id/tvBestName"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginLeft="8dp"
+                                android:layout_weight="1"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:textColor="#FFFFFF"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvBestAvg"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </FrameLayout>
+
+                <!-- ========== 扇形统计图 ========== -->
+                <LinearLayout
+                    android:id="@+id/chartCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="16dp"
+                    android:layout_marginRight="16dp"
+                    android:layout_marginTop="12dp"
+                    android:orientation="vertical"
+                    android:paddingLeft="16dp"
+                    android:paddingRight="16dp"
+                    android:paddingTop="14dp"
+                    android:paddingBottom="14dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tvChartTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="支出构成"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvChartSub"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginLeft="8dp"
+                            android:layout_weight="1"
+                            android:text="按设备类型"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:id="@+id/btnByAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:paddingLeft="10dp"
+                            android:paddingRight="10dp"
+                            android:paddingTop="4dp"
+                            android:paddingBottom="4dp"
+                            android:text="按金额"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:id="@+id/btnByCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginLeft="6dp"
+                            android:gravity="center"
+                            android:paddingLeft="10dp"
+                            android:paddingRight="10dp"
+                            android:paddingTop="4dp"
+                            android:paddingBottom="4dp"
+                            android:text="按台数"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:id="@+id/btnToggleChart"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginLeft="10dp"
+                            android:text="收起"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/chartBody"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <com.deviceledger.app.ui.PieChartView
+                            android:id="@+id/pieChart"
+                            android:layout_width="152dp"
+                            android:layout_height="152dp" />
+
+                        <LinearLayout
+                            android:id="@+id/legendBox"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginLeft="10dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- ========== 排序 + 收藏筛选 ========== -->
+                <LinearLayout
+                    android:id="@+id/sortBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingLeft="16dp"
+                    android:paddingRight="16dp"
+                    android:paddingTop="14dp"
+                    android:paddingBottom="10dp">
+
+                    <TextView
+                        android:id="@+id/tvSortLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginRight="2dp"
+                        android:text="排序"
+                        android:textSize="12sp" />
+
+                    <!-- 胶囊变多了会超出一屏：让这一行横向滑动，"排序"两个字固定不动 -->
+                    <HorizontalScrollView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:overScrollMode="never"
+                        android:scrollbars="none">
+
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/btnFavOnly"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginLeft="7dp"
+                                android:gravity="center"
+                                android:paddingLeft="11dp"
+                                android:paddingRight="11dp"
+                                android:paddingTop="5dp"
+                                android:paddingBottom="5dp"
+                                android:text="★ 收藏"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/sortAvg"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginLeft="7dp"
+                                android:gravity="center"
+                                android:paddingLeft="11dp"
+                                android:paddingRight="11dp"
+                                android:paddingTop="5dp"
+                                android:paddingBottom="5dp"
+                                android:text="日均最高"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/sortPrice"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginLeft="7dp"
+                                android:gravity="center"
+                                android:paddingLeft="11dp"
+                                android:paddingRight="11dp"
+                                android:paddingTop="5dp"
+                                android:paddingBottom="5dp"
+                                android:text="价格最高"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/sortDate"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginLeft="7dp"
+                                android:gravity="center"
+                                android:paddingLeft="11dp"
+                                android:paddingRight="11dp"
+                                android:paddingTop="5dp"
+                                android:paddingBottom="5dp"
+                                android:text="最近购买"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/sortDays"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginLeft="7dp"
+                                android:gravity="center"
+                                android:paddingLeft="11dp"
+                                android:paddingRight="11dp"
+                                android:paddingTop="5dp"
+                                android:paddingBottom="5dp"
+                                android:text="用最久"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+                    </HorizontalScrollView>
+                </LinearLayout>
+
+                <!-- ========== 列表 / 空态 ========== -->
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/recycler"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:clipToPadding="false"
+                        android:nestedScrollingEnabled="false"
+                        android:overScrollMode="never"
+                        android:paddingLeft="16dp"
+                        android:paddingRight="16dp"
+                        android:paddingBottom="20dp"
+                        android:scrollbars="none" />
+
+                    <LinearLayout
+                        android:id="@+id/emptyState"
+                        android:layout_width="match_parent"
+                        android:layout_height="330dp"
+                        android:gravity="center"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <ImageView
+                            android:id="@+id/ivEmpty"
+                            android:layout_width="120dp"
+                            android:layout_height="120dp"
+                            android:contentDescription="空状态"
+                            android:src="@drawable/ic_empty" />
+
+                        <TextView
+                            android:id="@+id/tvEmptyTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="还没有设备记录"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvEmptyDesc1"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="记下第一台设备的购买日期和价格，"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvEmptyDesc2"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="它会告诉你这台设备每天花了多少钱。"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/btnEmptyAdd"
+                            android:layout_width="wrap_content"
+                            android:layout_height="42dp"
+                            android:layout_marginTop="18dp"
+                            android:gravity="center"
+                            android:paddingLeft="26dp"
+                            android:paddingRight="26dp"
+                            android:text="添加设备"
+                            android:textColor="#FFFFFF"
+                            android:textSize="15sp" />
+                    </LinearLayout>
+                </FrameLayout>
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+    </LinearLayout>
+
+    <!-- ==================== 置顶迷你汇总条 ==================== -->
+    <!-- 向下滚动到大卡片滑出屏幕后，这一小行会固定在最上方 -->
+    <LinearLayout
+        android:id="@+id/stickyBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:clickable="true"
+        android:orientation="vertical"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/stickyCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="12dp"
+            android:layout_marginRight="12dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="14dp"
+            android:paddingRight="14dp"
+            android:paddingTop="9dp"
+            android:paddingBottom="9dp">
+
+            <TextView
+                android:id="@+id/tvStickyTotal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="¥0"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <View
+                android:id="@+id/stickySep1"
+                android:layout_width="1dp"
+                android:layout_height="13dp"
+                android:layout_marginLeft="11dp"
+                android:layout_marginRight="11dp" />
+
+            <TextView
+                android:id="@+id/tvStickyCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 台"
+                android:textSize="12sp" />
+
+            <View
+                android:id="@+id/stickySep2"
+                android:layout_width="1dp"
+                android:layout_height="13dp"
+                android:layout_marginLeft="11dp"
+                android:layout_marginRight="11dp" />
+
+            <TextView
+                android:id="@+id/tvStickyAvg"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="日均 ¥0"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- ==================== 回顶部圆钮 ==================== -->
+    <!-- 滚过 320dp 才浮出来：先弹到 1.12 倍再回落；点一下快速滚回顶部 -->
+    <FrameLayout
+        android:id="@+id/btnTop"
+        android:layout_width="46dp"
+        android:layout_height="46dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="18dp"
+        android:layout_marginBottom="26dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/ivTop"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:contentDescription="回到顶部"
+            android:src="@drawable/ic_top" />
+    </FrameLayout>
+
+    <!-- ==================== 编辑面板 ==================== -->
+    <FrameLayout
+        android:id="@+id/editorLayer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clickable="true"
+        android:visibility="gone">
+
+        <!-- 用权重分配：上 18% 是可点关闭的遮罩，下 82% 是面板，
+             这样软键盘弹出导致窗口变小时面板会跟着压缩，按钮不会被顶到屏幕外 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:weightSum="100">
+
+            <View
+                android:id="@+id/editorScrim"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="18" />
+
+            <LinearLayout
+                android:id="@+id/editorSheet"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="82"
+                android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingLeft="20dp"
+                    android:paddingRight="20dp"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="8dp">
+
+                    <TextView
+                        android:id="@+id/tvEditorTitle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="添加设备"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/btnEditorClose"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingLeft="6dp"
+                        android:paddingRight="6dp"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp"
+                        android:text="关闭"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <ScrollView
+                    android:id="@+id/editorScroll"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:fillViewport="false"
+                    android:overScrollMode="never"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingLeft="20dp"
+                        android:paddingRight="20dp">
+
+                        <TextView
+                            android:id="@+id/tvLabelName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="设备名称"
+                            android:textSize="12sp" />
+
+                        <EditText
+                            android:id="@+id/etName"
+                            android:layout_width="match_parent"
+                            android:layout_height="46dp"
+                            android:layout_marginTop="6dp"
+                            android:background="@null"
+                            android:hint="例如：MacBook Pro 14"
+                            android:imeOptions="actionNext"
+                            android:inputType="text"
+                            android:maxLines="1"
+                            android:paddingLeft="14dp"
+                            android:paddingRight="14dp"
+                            android:singleLine="true"
+                            android:textSize="15sp" />
+
+                        <TextView
+                            android:id="@+id/tvLabelPrice"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:text="购买价格（元）"
+                            android:textSize="12sp" />
+
+                        <EditText
+                            android:id="@+id/etPrice"
+                            android:layout_width="match_parent"
+                            android:layout_height="46dp"
+                            android:layout_marginTop="6dp"
+                            android:background="@null"
+                            android:hint="0.00"
+                            android:imeOptions="actionNext"
+                            android:inputType="numberDecimal"
+                            android:maxLines="1"
+                            android:paddingLeft="14dp"
+                            android:paddingRight="14dp"
+                            android:singleLine="true"
+                            android:textSize="15sp" />
+
+                        <TextView
+                            android:id="@+id/tvLabelKind"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:text="设备类型"
+                            android:textSize="12sp" />
+
+                        <!-- 与鸿蒙的 FlexWrap 一致：固定 60x60 格子，排满一行自动换行；默认只铺一行 -->
+                        <com.deviceledger.app.ui.WrapLayout
+                            android:id="@+id/kindGrid"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp" />
+
+                        <LinearLayout
+                            android:id="@+id/btnKindMore"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center"
+                            android:orientation="horizontal"
+                            android:paddingTop="4dp"
+                            android:paddingBottom="2dp">
+
+                            <TextView
+                                android:id="@+id/tvKindMore"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="展开全部 41 类"
+                                android:textSize="12sp" />
+
+                            <TextView
+                                android:id="@+id/tvKindMoreArrow"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginLeft="5dp"
+                                android:text="▲"
+                                android:textSize="9sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvLabelDate"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="购买日期"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvDate"
+                            android:layout_width="match_parent"
+                            android:layout_height="52dp"
+                            android:layout_marginTop="6dp"
+                            android:background="@null"
+                            android:gravity="center_vertical"
+                            android:paddingLeft="14dp"
+                            android:paddingRight="14dp"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvLabelNote"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:text="备注（可选）"
+                            android:textSize="12sp" />
+
+                        <EditText
+                            android:id="@+id/etNote"
+                            android:layout_width="match_parent"
+                            android:layout_height="72dp"
+                            android:layout_marginTop="6dp"
+                            android:background="@null"
+                            android:gravity="top"
+                            android:hint="保修到什么时候、配件花了多少……"
+                            android:inputType="textMultiLine"
+                            android:maxLines="4"
+                            android:paddingLeft="14dp"
+                            android:paddingRight="14dp"
+                            android:paddingTop="10dp"
+                            android:paddingBottom="10dp"
+                            android:textSize="14sp" />
+
+                        <LinearLayout
+                            android:id="@+id/rowFav"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:layout_marginTop="16dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:paddingLeft="14dp"
+                            android:paddingRight="14dp">
+
+                            <TextView
+                                android:id="@+id/tvFavLabel"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="收藏为最爱"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:id="@+id/tvFavState"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginRight="6dp"
+                                android:text="未收藏"
+                                android:textSize="12sp" />
+
+                            <ImageView
+                                android:id="@+id/ivFavSwitch"
+                                android:layout_width="22dp"
+                                android:layout_height="22dp"
+                                android:contentDescription="收藏开关"
+                                android:src="@drawable/ic_star_off" />
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="10dp" />
+                    </LinearLayout>
+                </ScrollView>
+
+                <TextView
+                    android:id="@+id/tvError"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingLeft="20dp"
+                    android:paddingRight="20dp"
+                    android:paddingTop="6dp"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingLeft="20dp"
+                    android:paddingRight="20dp"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="22dp">
+
+                    <TextView
+                        android:id="@+id/btnCancel"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:text="取消"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:id="@+id/btnSave"
+                        android:layout_width="0dp"
+                        android:layout_height="46dp"
+                        android:layout_marginLeft="12dp"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:text="保存"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- ==================== 删除确认 ==================== -->
+    <LinearLayout
+        android:id="@+id/confirmLayer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:id="@+id/confirmCard"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="20dp">
+
+            <TextView
+                android:id="@+id/tvConfirmTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="确定删除这台设备？"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvDeleteName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/btnConfirmCancel"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="取消"
+                    android:textSize="15sp" />
+
+                <TextView
+                    android:id="@+id/btnConfirmDelete"
+                    android:layout_width="0dp"
+                    android:layout_height="44dp"
+                    android:layout_marginLeft="12dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="删除"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+</FrameLayout>

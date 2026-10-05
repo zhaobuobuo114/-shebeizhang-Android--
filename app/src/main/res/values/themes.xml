@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/launch_bg</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="colorPrimary">@color/primary_light</item>
+        <item name="colorAccent">@color/accent_light</item>
+        <item name="android:colorAccent">@color/accent_light</item>
+        <item name="android:textColorPrimary">#171A21</item>
+        <item name="android:windowContentOverlay">@null</item>
+
+        <!-- 所有按压/水波纹高亮统一改成中性色，彻底去掉点击时出现的蓝色边框 -->
+        <item name="colorControlHighlight">@color/press_highlight</item>
+        <item name="android:colorControlHighlight">@color/press_highlight</item>
+        <item name="android:textColorHighlight">@color/text_highlight</item>
+        <item name="colorControlActivated">@color/primary_light</item>
+        <item name="android:colorControlActivated">@color/primary_light</item>
+        <!-- 列表边缘、滚动条不用系统强调色 -->
+        <item name="android:colorEdgeEffect">@color/press_highlight</item>
+        <item name="android:textSelectHandle">@null</item>
+        <item name="android:textSelectHandleLeft">@null</item>
+        <item name="android:textSelectHandleRight">@null</item>
+    </style>
+</resources>
