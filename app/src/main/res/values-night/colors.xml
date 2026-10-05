@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="launch_bg">#10131A</color>
+
+    <color name="primary_light">#5B8CFF</color>
+    <color name="primary_dark">#5B8CFF</color>
+    <color name="accent_light">#FFA171</color>
+    <color name="accent_dark">#FFA171</color>
+
+    <!-- 按下态水印色：中性白，覆盖主题默认的蓝色高亮，避免点击出现蓝边 -->
+    <color name="press_highlight">#1FFFFFFF</color>
+    <color name="text_highlight">#335B8CFF</color>
+</resources>

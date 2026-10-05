@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="22dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <View
+        android:id="@+id/legendDot"
+        android:layout_width="9dp"
+        android:layout_height="9dp" />
+
+    <TextView
+        android:id="@+id/tvLegendName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="7dp"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:textSize="12sp" />
+
+    <TextView
+        android:id="@+id/tvLegendValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:includeFontPadding="false"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/tvLegendPercent"
+        android:layout_width="38dp"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:includeFontPadding="false"
+        android:textSize="11sp" />
+</LinearLayout>
