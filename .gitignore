@@ -1,0 +1,19 @@
+# Gradle / 构建产物
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build
+/captures
+/.externalNativeBuild
+/.cxx
+/app/build
+/app/release
+.cxx/
+
+# 本地编译日志
+_*.log
+
+# JDK / NDK 配置
+local.properties
