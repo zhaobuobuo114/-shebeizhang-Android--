@@ -17,3 +17,12 @@ _*.log
 
 # JDK / NDK 配置
 local.properties
+
+# 正式签名：私钥证书与口令不进版本库
+keystore.properties
+keystore/
+*.jks
+*.keystore
+
+# 正式安装包输出目录
+releases/

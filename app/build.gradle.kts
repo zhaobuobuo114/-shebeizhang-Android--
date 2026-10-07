@@ -3,6 +3,22 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+// 正式签名：证书与口令放在工程根目录的 keystore.properties（本地文件，不进版本库）。
+// 缺少该文件时不配 release 签名，保证 clone 后仍能编译。
+val signingProps: Map<String, String> = mutableMapOf<String, String>().apply {
+    val propsFile = rootProject.file("keystore.properties")
+    if (propsFile.exists()) {
+        propsFile.readLines().forEach { line ->
+            val text = line.trim()
+            val sep = text.indexOf('=')
+            if (text.isNotEmpty() && !text.startsWith("#") && sep > 0) {
+                put(text.substring(0, sep).trim(), text.substring(sep + 1).trim())
+            }
+        }
+    }
+}
+val hasSigning = signingProps.containsKey("storeFile")
+
 android {
     namespace = "com.deviceledger.app"
     // 本机 SDK 只安装了 android-37 平台与 36.0.0 构建工具，按实际环境对齐
@@ -13,17 +29,33 @@ android {
         applicationId = "com.deviceledger.app"
         minSdk = 24
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 4
+        versionName = "1.4"
+    }
+
+    signingConfigs {
+        if (hasSigning) {
+            create("release") {
+                storeFile = file(signingProps.getOrDefault("storeFile", ""))
+                storePassword = signingProps.getOrDefault("storePassword", "")
+                keyAlias = signingProps.getOrDefault("keyAlias", "")
+                keyPassword = signingProps.getOrDefault("keyPassword", "")
+            }
+        }
     }
 
     buildTypes {
         release {
+            // 正式发布包：不带 debuggable 标记，用上面的正式证书签名
+            signingConfig = signingConfigs.findByName("release")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            // 调试包保留默认调试签名，与正式包区分
         }
     }
 
