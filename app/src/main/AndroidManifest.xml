@@ -10,10 +10,17 @@
         android:supportsRtl="false"
         android:theme="@style/AppTheme">
 
+        <!--
+          configChanges：切昼夜模式（uiMode）时不重建 Activity。
+          鸿蒙版换肤只是改 @State，整棵组件树原地更新、动画连续播完；
+          安卓默认会销毁重建，界面等于重来一遍（数字动画重播、列表重建、闪一下）。
+          这里声明自行处理，让换肤动画和鸿蒙一样在同一棵树里连续播完。
+        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:screenOrientation="portrait"
+            android:configChanges="uiMode|colorMode|screenLayout|screenSize|smallestScreenSize|density|fontScale|layoutDirection|keyboardHidden|orientation"
             android:windowSoftInputMode="adjustResize|stateHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
