@@ -38,8 +38,10 @@ import com.deviceledger.app.ui.KindTilesBinder
 import com.deviceledger.app.ui.WrapLayout
 import com.deviceledger.app.ui.circleDrawable
 import com.deviceledger.app.ui.pressEffect
+import com.deviceledger.app.ui.chipTo
 import com.deviceledger.app.ui.roundedDrawable
 import com.deviceledger.app.ui.roundedTopDrawable
+import com.deviceledger.app.ui.tintTo
 import com.deviceledger.app.util.DateUtil
 import com.deviceledger.app.util.DeviceStore
 import com.deviceledger.app.util.Fmt
@@ -504,12 +506,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** 排序栏里的收藏胶囊：文字带收藏数量，选中时是金色 */
-    private fun updateFavChip() {
+    private fun updateFavChip(animate: Boolean = false) {
         val count = devices.count { it.favorite }
         val tv = binding.btnFavOnly
         tv.text = if (count > 0) "★ 收藏 $count" else "★ 收藏"
-        tv.background = roundedDrawable(if (favOnly) theme.gold else theme.chipBg, 13f, density)
-        tv.setTextColor(if (favOnly) CardColors.whiteText else theme.gold)
+        // 220ms 对应鸿蒙 setFavOnly 的 animateTo({ duration: 220, curve: Curve.Friction })
+        tv.chipTo(
+            if (favOnly) theme.gold else theme.chipBg,
+            if (favOnly) CardColors.whiteText else theme.gold,
+            13f,
+            density,
+            if (animate) 220L else 0L
+        )
     }
 
     /** 编辑面板里的"收藏为最爱"整行开关 */
@@ -564,8 +572,9 @@ class MainActivity : AppCompatActivity() {
 
         press(binding.btnFavOnly, 0.90f) { setFavOnly(!favOnly) }
 
-        // 排序方向：点箭头切换正序 / 倒序
-        press(binding.btnSortDir, 0.90f) { toggleSortDir() }
+        // 排序方向：「排序」两个字 + 上下双箭头是同一块热区，点哪儿都切正序 / 倒序。
+        // 按压缩到 0.92，与鸿蒙版 sc() 同一个数
+        press(binding.sortDirBox, 0.92f) { toggleSortDir() }
 
         press(binding.sortAvg, 0.90f) { setSort("avg") }
         press(binding.sortPrice, 0.90f) { setSort("price") }
@@ -599,7 +608,8 @@ class MainActivity : AppCompatActivity() {
     private fun setFavOnly(on: Boolean) {
         if (favOnly == on) return
         favOnly = on
-        refreshAll(animateNumbers = false)
+        // 鸿蒙版这里走的是 animateTo 220ms Friction：胶囊不重建，配色是渐变过去的
+        refreshAll(animateNumbers = false, animateFav = true)
         // 与鸿蒙版一致：筛完列表别停在半空
         if (binding.scrollMain.scrollY > 0) scrollToTop()
     }
@@ -614,10 +624,11 @@ class MainActivity : AppCompatActivity() {
         refreshAll(animateNumbers = false)
     }
 
-    /** 切换排序方向（点箭头，或点当前已选中的那个排序胶囊） */
+    /** 切换排序方向（点「排序」或箭头，或点当前已选中的那个排序胶囊） */
     private fun toggleSortDir() {
         sortAsc = !sortAsc
-        refreshAll(animateNumbers = false)
+        // 鸿蒙版是 animateTo 260ms Friction：箭头不重建，配色渐变过去，不是硬切
+        refreshAll(animateNumbers = false, animateSort = true)
     }
 
     private fun setChartMode(mode: String) {
@@ -671,7 +682,15 @@ class MainActivity : AppCompatActivity() {
         return list
     }
 
-    private fun refreshAll(animateNumbers: Boolean) {
+    /**
+     * @param animateSort 排序方向切换：箭头配色走 260ms 渐变（对齐鸿蒙 animateTo）
+     * @param animateFav  "只看收藏"切换：胶囊配色走 220ms 渐变（同上）
+     */
+    private fun refreshAll(
+        animateNumbers: Boolean,
+        animateSort: Boolean = false,
+        animateFav: Boolean = false
+    ) {
         val shown = sortedList()
         adapter.submit(shown)
 
@@ -704,9 +723,9 @@ class MainActivity : AppCompatActivity() {
 
         animateNumbers(total, avg, animateNumbers)
         updateChart(animate = true)
-        updateSortChips()
+        updateSortChips(animateSort)
         updateModeChips()
-        updateFavChip()
+        updateFavChip(animateFav)
         // 设备被删空时，置顶条要跟着收起
         binding.root.post { updateSticky(binding.scrollMain.scrollY) }
     }
@@ -807,7 +826,12 @@ class MainActivity : AppCompatActivity() {
     private fun safeColor(hex: String): Int =
         runCatching { Color.parseColor(hex) }.getOrDefault(Color.GRAY)
 
-    private fun updateSortChips() {
+    /**
+     * @param animate 只让"方向箭头"渐变。四个排序胶囊保持硬切——
+     *                鸿蒙那边它们的 ForEach key 里带了方向和选中态，一切换就重建组件，
+     *                本来就没有过渡，两边对齐后才是同一个观感。
+     */
+    private fun updateSortChips(animate: Boolean = false) {
         // 正序时文案跟着反过来，免得"日均最高"配上一行从低到高的数据自相矛盾
         binding.sortAvg.text = if (sortAsc) "日均最低" else "日均最高"
         binding.sortPrice.text = if (sortAsc) "价格最低" else "价格最高"
@@ -817,15 +841,23 @@ class MainActivity : AppCompatActivity() {
         setChip(binding.sortPrice, sortType == "price", 13f)
         setChip(binding.sortDate, sortType == "date", 13f)
         setChip(binding.sortDays, sortType == "days", 13f)
-        updateSortDirIcon()
+        updateSortDirIcon(animate)
     }
 
     /** 上下箭头：当前方向的那一个点亮（主色 + 不透明），另一个压暗 */
-    private fun updateSortDirIcon() {
-        binding.tvSortUp.setTextColor(if (sortAsc) theme.primary else theme.sub)
-        binding.tvSortUp.alpha = if (sortAsc) 1f else 0.45f
-        binding.tvSortDown.setTextColor(if (sortAsc) theme.sub else theme.primary)
-        binding.tvSortDown.alpha = if (sortAsc) 0.45f else 1f
+    private fun updateSortDirIcon(animate: Boolean = false) {
+        // 260ms 对应鸿蒙 toggleSortDir 的 animateTo({ duration: 260, curve: Curve.Friction })
+        val d = if (animate) 260L else 0L
+        binding.tvSortUp.tintTo(
+            if (sortAsc) theme.primary else theme.sub,
+            if (sortAsc) 1f else 0.45f,
+            d
+        )
+        binding.tvSortDown.tintTo(
+            if (sortAsc) theme.sub else theme.primary,
+            if (sortAsc) 0.45f else 1f,
+            d
+        )
     }
 
     private fun updateModeChips() {
