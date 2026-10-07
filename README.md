@@ -137,7 +137,26 @@ keyAlias=你的别名
 keyPassword=你的口令
 ```
 
-也可以直接从 [Releases](../../releases) 下载已签好的正式安装包。
+### 覆盖升级包
+
+早期版本用的是另一份证书，换成正式证书后无法原地覆盖安装（Android 会提示签名不同）。
+所以额外出一个**内容完全相同、只换了签名**的包，让装了早期版本的设备能直接升上来、数据不丢：
+
+```bash
+./gradlew assembleUpgrade   # 产物 app/build/outputs/apk/upgrade/app-upgrade.apk
+```
+
+它的证书同样从 `keystore.properties` 读取，加上下面四项即可（同样是本地文件，不进版本库）：
+
+```properties
+legacyStoreFile=../keystore/调试证书路径
+legacyStorePassword=android
+legacyKeyAlias=androiddebugkey
+legacyKeyPassword=android
+```
+
+两个包选哪个：要提交应用市场就用正式包，自己手机上从旧版升上来就用覆盖升级包。
+也可以直接从 [Releases](../../releases) 下载已签好的安装包。
 APK 内包含全部 41 张设备图标与 3 张功能图标，`AndroidManifest.xml` 无任何权限声明。
 
 ## 七、想再加点什么
@@ -151,6 +170,7 @@ APK 内包含全部 41 张设备图标与 3 张功能图标，`AndroidManifest.x
 
 | 版本 | 内容 |
 | --- | --- |
+| v1.6.2 | 列表卡片错峰入场跟随鸿蒙版重播（切收藏筛选、增删设备后重新飞入）；新增沿用早期证书的覆盖升级包 |
 | v1.6.1 | 动效的播放时机进一步对齐：进场动画完整播完、换肤不重建界面、图表展开重播扇形 |
 | v1.6 | 全部动效按鸿蒙版的时长、曲线、缩放值逐帧对齐；列表排序 / 筛选改为平滑挪位 |
 | v1.5.1 | 排序方向热区扩大到「排序」文字、箭头间距收紧、方向切换与收藏切换改为渐变过渡 |
