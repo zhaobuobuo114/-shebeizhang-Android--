@@ -29,8 +29,8 @@ android {
         applicationId = "com.deviceledger.app"
         minSdk = 24
         targetSdk = 37
-        versionCode = 8
-        versionName = "1.6.1"
+        versionCode = 9
+        versionName = "1.6.2"
     }
 
     signingConfigs {
@@ -40,6 +40,16 @@ android {
                 storePassword = signingProps.getOrDefault("storePassword", "")
                 keyAlias = signingProps.getOrDefault("keyAlias", "")
                 keyPassword = signingProps.getOrDefault("keyPassword", "")
+            }
+        }
+        // 沿用最早那批包的证书：老设备上装的是这个签名，换证书就装不上，
+        // 所以单独出一个"覆盖升级包"，让它们能原地升上来、数据不丢。
+        if (signingProps.containsKey("legacyStoreFile")) {
+            create("legacy") {
+                storeFile = file(signingProps.getOrDefault("legacyStoreFile", ""))
+                storePassword = signingProps.getOrDefault("legacyStorePassword", "")
+                keyAlias = signingProps.getOrDefault("legacyKeyAlias", "")
+                keyPassword = signingProps.getOrDefault("legacyKeyPassword", "")
             }
         }
     }
@@ -53,6 +63,13 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        // 覆盖升级包：内容和正式包完全一致，只是换成老证书签名
+        if (signingConfigs.findByName("legacy") != null) {
+            create("upgrade") {
+                initWith(getByName("release"))
+                signingConfig = signingConfigs.findByName("legacy")
+            }
         }
         debug {
             // 调试包保留默认调试签名，与正式包区分
