@@ -5,7 +5,7 @@ import android.animation.AnimatorListenerAdapter
 import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.graphics.drawable.GradientDrawable
-import android.view.animation.DecelerateInterpolator
+import android.view.View
 import android.widget.TextView
 import com.deviceledger.app.R
 
@@ -16,7 +16,7 @@ private val ARGB = ArgbEvaluator()
  *
  * 对应鸿蒙版 `animateTo({ duration, curve: Curve.Friction })`：那边改的是 @State，
  * 组件不重建，颜色天然是插值过去的；安卓这边 setTextColor / setAlpha 都是硬切，
- * 不插值的话点下去就是"啪"一下换色，没有过渡。这里用缓出曲线近似 Friction。
+ * 不插值的话点下去就是"啪"一下换色，没有过渡。
  *
  * @param durationMs 传 0 表示立即生效（换肤、首次渲染这类不需要动画的场合）。
  *                   同一个 View 上重复调用会先取消上一次，两个动画不会打架。
@@ -35,7 +35,7 @@ fun TextView.tintTo(colorTo: Int, alphaTo: Float, durationMs: Long) {
     }
     val va = ValueAnimator.ofFloat(0f, 1f)
     va.duration = durationMs
-    va.interpolator = DecelerateInterpolator(1.5f)
+    va.interpolator = Curves.friction
     va.addUpdateListener {
         val f = it.animatedFraction
         setTextColor(ARGB.evaluate(f, colorFrom, colorTo) as Int)
@@ -80,7 +80,7 @@ fun TextView.chipTo(
     val d = background as GradientDrawable
     val va = ValueAnimator.ofFloat(0f, 1f)
     va.duration = durationMs
-    va.interpolator = DecelerateInterpolator(1.5f)
+    va.interpolator = Curves.friction
     va.addUpdateListener {
         val f = it.animatedFraction
         val bg = ARGB.evaluate(f, bgFrom, bgTo) as Int
@@ -97,4 +97,63 @@ fun TextView.chipTo(
     })
     va.start()
     setTag(R.id.tag_chip_anim, va)
+}
+
+/**
+ * 设备类型格子的底色 + 描边（颜色与粗细）+ 圆角一起过渡。
+ *
+ * 对应鸿蒙版编辑面板里选中类型时的 `animateTo({ duration: 200, curve: Curve.Friction })`：
+ * 那边的边框宽度和底色都是插值过去的，安卓这边不插值就是硬切。
+ *
+ * @param durationMs 传 0 表示立即生效（换肤、首次渲染）。
+ */
+fun View.tileTo(
+    bgTo: Int,
+    strokeColorTo: Int,
+    strokeDpTo: Float,
+    radiusDp: Float,
+    density: Float,
+    durationMs: Long
+) {
+    (getTag(R.id.tag_tile_anim) as? ValueAnimator)?.cancel()
+    val bgFrom = (getTag(R.id.tag_tile_bg) as? Int) ?: bgTo
+    val strokeFrom = (getTag(R.id.tag_tile_stroke) as? Int) ?: strokeColorTo
+    val widthFrom = (getTag(R.id.tag_tile_stroke_w) as? Float) ?: strokeDpTo
+    val same = bgFrom == bgTo && strokeFrom == strokeColorTo && widthFrom == strokeDpTo
+    if (durationMs <= 0L || same) {
+        setTag(R.id.tag_tile_bg, bgTo)
+        setTag(R.id.tag_tile_stroke, strokeColorTo)
+        setTag(R.id.tag_tile_stroke_w, strokeDpTo)
+        background = borderedDrawable(bgTo, radiusDp, strokeColorTo, strokeDpTo, density)
+        return
+    }
+    if (background !is GradientDrawable) {
+        background = borderedDrawable(bgFrom, radiusDp, strokeFrom, widthFrom, density)
+    }
+    val d = background as GradientDrawable
+    val va = ValueAnimator.ofFloat(0f, 1f)
+    va.duration = durationMs
+    va.interpolator = Curves.friction
+    va.addUpdateListener {
+        val f = it.animatedFraction
+        val bg = ARGB.evaluate(f, bgFrom, bgTo) as Int
+        val sc = ARGB.evaluate(f, strokeFrom, strokeColorTo) as Int
+        val sw = widthFrom + (strokeDpTo - widthFrom) * f
+        d.setColor(bg)
+        d.setStroke((sw * density).toInt().coerceAtLeast(0), sc)
+        setTag(R.id.tag_tile_bg, bg)
+        setTag(R.id.tag_tile_stroke, sc)
+        setTag(R.id.tag_tile_stroke_w, sw)
+    }
+    va.addListener(object : AnimatorListenerAdapter() {
+        override fun onAnimationEnd(animation: Animator) {
+            setTag(R.id.tag_tile_bg, bgTo)
+            setTag(R.id.tag_tile_stroke, strokeColorTo)
+            setTag(R.id.tag_tile_stroke_w, strokeDpTo)
+            d.setColor(bgTo)
+            d.setStroke((strokeDpTo * density).toInt().coerceAtLeast(0), strokeColorTo)
+        }
+    })
+    va.start()
+    setTag(R.id.tag_tile_anim, va)
 }

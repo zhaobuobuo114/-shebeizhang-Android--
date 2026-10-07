@@ -9,11 +9,10 @@ import android.graphics.Rect
 import android.os.Bundle
 import android.view.View
 import android.view.ViewOutlineProvider
-import android.view.animation.AccelerateDecelerateInterpolator
-import android.view.animation.AccelerateInterpolator
-import android.view.animation.DecelerateInterpolator
+import android.view.animation.Interpolator
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -32,9 +31,11 @@ import com.deviceledger.app.model.DeviceItem
 import com.deviceledger.app.model.PieSlice
 import com.deviceledger.app.ui.AppTheme
 import com.deviceledger.app.ui.CardColors
+import com.deviceledger.app.ui.Curves
 import com.deviceledger.app.ui.DeviceAdapter
 import com.deviceledger.app.ui.GradientBgDrawable
 import com.deviceledger.app.ui.KindTilesBinder
+import com.deviceledger.app.ui.MoveAnimator
 import com.deviceledger.app.ui.WrapLayout
 import com.deviceledger.app.ui.circleDrawable
 import com.deviceledger.app.ui.pressEffect
@@ -42,6 +43,7 @@ import com.deviceledger.app.ui.chipTo
 import com.deviceledger.app.ui.roundedDrawable
 import com.deviceledger.app.ui.roundedTopDrawable
 import com.deviceledger.app.ui.tintTo
+import com.deviceledger.app.ui.topPressEffect
 import com.deviceledger.app.util.DateUtil
 import com.deviceledger.app.util.DeviceStore
 import com.deviceledger.app.util.Fmt
@@ -53,6 +55,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: DeviceAdapter
     private lateinit var kindBinder: KindTilesBinder
+    /** 列表动画：只让"位置挪动"播，时长与曲线每次提交列表前指定 */
+    private lateinit var listAnimator: MoveAnimator
 
     private var dark: Boolean = false
     private var theme: AppTheme = AppTheme.lightTheme()
@@ -192,6 +196,8 @@ class MainActivity : AppCompatActivity() {
             val bar = binding.stickyBar
             val h = if (bar.height > 0) bar.height.toFloat() else 52f * density
             bar.animate().cancel()
+            // 鸿蒙版写的是一条 transition（OPACITY + move TOP，240ms EaseOut），
+            // 出现和消失都走同一条，所以收起也是 240ms EaseOut，不是另起一条更快的
             if (want) {
                 bar.visibility = View.VISIBLE
                 bar.translationY = -h
@@ -200,14 +206,14 @@ class MainActivity : AppCompatActivity() {
                     .translationY(0f)
                     .alpha(1f)
                     .setDuration(240L)
-                    .setInterpolator(DecelerateInterpolator())
+                    .setInterpolator(Curves.easeOut)
                     .start()
             } else {
                 bar.animate()
                     .translationY(-h)
                     .alpha(0f)
-                    .setDuration(200L)
-                    .setInterpolator(AccelerateInterpolator())
+                    .setDuration(240L)
+                    .setInterpolator(Curves.easeOut)
                     .withEndAction { bar.visibility = View.GONE }
                     .start()
             }
@@ -242,8 +248,11 @@ class MainActivity : AppCompatActivity() {
                 .scaleX(1.12f)
                 .scaleY(1.12f)
                 .alpha(1f)
+                // 鸿蒙版先 setTimeout 16ms 再 animateTo：让"0.3 倍"这一帧先落下去，
+                // 否则动画会从 1 开始弹。这里用 startDelay 还原同样的节奏
+                .setStartDelay(16L)
                 .setDuration(170L)
-                .setInterpolator(DecelerateInterpolator())
+                .setInterpolator(Curves.friction)
                 .withEndAction {
                     if (!topShown) {
                         return@withEndAction
@@ -252,7 +261,7 @@ class MainActivity : AppCompatActivity() {
                         .scaleX(1f)
                         .scaleY(1f)
                         .setDuration(140L)
-                        .setInterpolator(AccelerateDecelerateInterpolator())
+                        .setInterpolator(Curves.easeInOut)
                         .start()
                 }
                 .start()
@@ -262,13 +271,15 @@ class MainActivity : AppCompatActivity() {
                 .scaleY(0.4f)
                 .alpha(0f)
                 .setDuration(140L)
-                .setInterpolator(AccelerateInterpolator())
+                .setInterpolator(Curves.easeIn)
                 .withEndAction { btn.visibility = View.GONE }
                 .start()
         }
     }
 
     private var scrollAnim: android.animation.ValueAnimator? = null
+    /** 图表区展开 / 收起的高度动画 */
+    private var chartAnim: android.animation.ValueAnimator? = null
 
     /**
      * 回顶部：时长跟着滚动距离走（200ms 起步、最远 460ms），缓出收尾，
@@ -280,10 +291,11 @@ class MainActivity : AppCompatActivity() {
             return
         }
         scrollAnim?.cancel()
-        val dur = Math.min(460L, (200f + from / density * 0.3f).toLong())
+        val spanVp = from / density
+        val dur = Math.min(460L, Math.round(200f + spanVp * 0.3f).toLong())
         val va = android.animation.ValueAnimator.ofInt(from, 0)
         va.duration = dur
-        va.interpolator = DecelerateInterpolator()
+        va.interpolator = Curves.easeOut
         va.addUpdateListener { binding.scrollMain.scrollTo(0, it.animatedValue as Int) }
         va.start()
         scrollAnim = va
@@ -298,6 +310,9 @@ class MainActivity : AppCompatActivity() {
         )
         binding.recycler.layoutManager = LinearLayoutManager(this)
         binding.recycler.adapter = adapter
+        // 只播位移动画，时长与曲线由每次提交列表时指定（鸿蒙端排序是在 animateTo 里改状态的）
+        listAnimator = MoveAnimator()
+        binding.recycler.itemAnimator = listAnimator
         binding.recycler.addItemDecoration(object : RecyclerView.ItemDecoration() {
             override fun getItemOffsets(outRect: Rect, view: View, parent: RecyclerView, state: RecyclerView.State) {
                 outRect.bottom = (12f * density).toInt()
@@ -376,7 +391,8 @@ class MainActivity : AppCompatActivity() {
     private fun setupKindGrid() {
         kindBinder = KindTilesBinder(binding.kindGrid) { key ->
             editKind = key
-            kindBinder.select(key)
+            // 点格子：底色 / 描边 / 文字色走 200ms Friction 渐变（鸿蒙 animateTo 200）
+            kindBinder.select(key, animate = true)
         }
         binding.kindGrid.spacingH = (6f * density).toInt()
         binding.kindGrid.spacingV = (6f * density).toInt()
@@ -433,10 +449,12 @@ class MainActivity : AppCompatActivity() {
             if (kindExpanded) "收起" else ("展开全部 " + DEVICE_KINDS.size + " 类")
         val target = if (kindExpanded) 0f else 180f
         if (animateArrow) {
+            // 鸿蒙版箭头 rotate 写在 .animation(140ms EaseOut) 之上，
+            // 走的是这条组件动画，不是外层 260ms 的高度动画
             binding.tvKindMoreArrow.animate()
                 .rotation(target)
-                .setDuration(260L)
-                .setInterpolator(DecelerateInterpolator())
+                .setDuration(140L)
+                .setInterpolator(Curves.easeOut)
                 .start()
         } else {
             binding.tvKindMoreArrow.rotation = target
@@ -452,7 +470,7 @@ class MainActivity : AppCompatActivity() {
         if (from > 0 && from != to) {
             val va = android.animation.ValueAnimator.ofInt(from, to)
             va.duration = 260L
-            va.interpolator = AccelerateDecelerateInterpolator()
+            va.interpolator = Curves.friction
             va.addUpdateListener {
                 val lp = binding.kindGrid.layoutParams
                 lp.height = it.animatedValue as Int
@@ -522,39 +540,35 @@ class MainActivity : AppCompatActivity() {
 
     /** 编辑面板里的"收藏为最爱"整行开关 */
     private fun setupFavRow() {
-        binding.rowFav.pressEffect(0.98f)
+        binding.rowFav.pressEffect(0.92f)
         binding.rowFav.setOnClickListener {
             editFavorite = !editFavorite
-            animateToFavSwitch()
-            renderFavSwitch()
+            renderFavSwitch(animate = true)
         }
     }
 
-    private fun renderFavSwitch() {
+    /**
+     * 鸿蒙版这里只有 `animateTo({ duration: 220, curve: Curve.Friction })` 改 editFavorite：
+     * 状态文字的配色是插值过去的，图标换资源是硬切，并没有额外的缩放弹跳。
+     * 所以这里也只做文字色渐变，不给图标加动画。
+     */
+    private fun renderFavSwitch(animate: Boolean = false) {
         binding.tvFavState.text = if (editFavorite) "已收藏" else "未收藏"
-        binding.tvFavState.setTextColor(if (editFavorite) theme.gold else theme.sub)
+        binding.tvFavState.tintTo(
+            if (editFavorite) theme.gold else theme.sub,
+            1f,
+            if (animate) 220L else 0L
+        )
         binding.ivFavSwitch.setImageResource(
             if (editFavorite) R.drawable.ic_star else R.drawable.ic_star_off
         )
     }
 
-    private fun animateToFavSwitch() {
-        binding.ivFavSwitch.animate().cancel()
-        binding.ivFavSwitch.scaleX = 0.8f
-        binding.ivFavSwitch.scaleY = 0.8f
-        binding.ivFavSwitch.animate()
-            .scaleX(1f)
-            .scaleY(1f)
-            .setDuration(240L)
-            .setInterpolator(DecelerateInterpolator())
-            .start()
-    }
-
     /* ------------------------------ 交互 ------------------------------ */
 
     private fun setupActions() {
-        // 统一加按压动效（按下缩小 + 半透明，松手回弹），替掉系统默认的蓝色水波纹
-        // 鸿蒙版统一是 scale 0.92 / 140ms 回弹；这里用 0.92 对齐
+        // 统一加按压动效（按下缩小、松手回弹），替掉系统默认的蓝色水波纹。
+        // 鸿蒙版主页上的控件一律按到 0.92、140ms EaseOut 回弹，这里逐项对齐
         press(binding.btnTheme) { toggleTheme() }
         press(binding.btnAdd) { openEditor(null) }
         press(binding.btnEmptyAdd) {
@@ -570,26 +584,27 @@ class MainActivity : AppCompatActivity() {
         press(binding.btnByCount, 0.90f) { setChartMode("count") }
         press(binding.btnToggleChart, 0.90f) { toggleChart() }
 
-        press(binding.btnFavOnly, 0.90f) { setFavOnly(!favOnly) }
+        // 收藏胶囊：鸿蒙版在主页上，sc() 是 0.92（只有图表里的小胶囊才是 0.90）
+        press(binding.btnFavOnly) { setFavOnly(!favOnly) }
 
-        // 排序方向：「排序」两个字 + 上下双箭头是同一块热区，点哪儿都切正序 / 倒序。
-        // 按压缩到 0.92，与鸿蒙版 sc() 同一个数
-        press(binding.sortDirBox, 0.92f) { toggleSortDir() }
+        // 排序方向：「排序」两个字 + 上下双箭头是同一块热区，点哪儿都切正序 / 倒序
+        press(binding.sortDirBox) { toggleSortDir() }
 
-        press(binding.sortAvg, 0.90f) { setSort("avg") }
-        press(binding.sortPrice, 0.90f) { setSort("price") }
-        press(binding.sortDate, 0.90f) { setSort("date") }
-        press(binding.sortDays, 0.90f) { setSort("days") }
+        press(binding.sortAvg) { setSort("avg") }
+        press(binding.sortPrice) { setSort("price") }
+        press(binding.sortDate) { setSort("date") }
+        press(binding.sortDays) { setSort("days") }
 
-        // 回顶部：右下角圆钮，逻辑内部的按下回弹和鸿蒙版一个时序
-        press(binding.btnTop, 0.90f) { scrollToTop() }
+        // 回顶部圆钮：鸿蒙版不走通用 sc()，是按下 90ms 压到 0.84、松手 210ms 弹回
+        binding.btnTop.topPressEffect { if (topShown) 1f else 0.4f }
+        binding.btnTop.setOnClickListener { scrollToTop() }
         // 置顶那条汇总也可以点，点了同样回顶部（鸿蒙版一致）
-        press(binding.stickyBar, 0.99f) { scrollToTop() }
+        press(binding.stickyBar) { scrollToTop() }
 
         press(binding.btnEditorClose) { closeEditor() }
         press(binding.btnCancel) { closeEditor() }
         press(binding.btnSave) { onSave() }
-        press(binding.tvDate, 0.98f) { pickDate() }
+        press(binding.tvDate) { pickDate() }
 
         binding.editorScrim.setOnClickListener { closeEditor() }
         binding.confirmLayer.setOnClickListener { showConfirm(false) }
@@ -599,7 +614,7 @@ class MainActivity : AppCompatActivity() {
         press(binding.btnConfirmDelete) { confirmDelete() }
     }
 
-    private fun press(view: View, scale: Float = 0.94f, action: () -> Unit) {
+    private fun press(view: View, scale: Float = 0.92f, action: () -> Unit) {
         view.pressEffect(scale)
         view.setOnClickListener { action() }
     }
@@ -608,8 +623,14 @@ class MainActivity : AppCompatActivity() {
     private fun setFavOnly(on: Boolean) {
         if (favOnly == on) return
         favOnly = on
-        // 鸿蒙版这里走的是 animateTo 220ms Friction：胶囊不重建，配色是渐变过去的
-        refreshAll(animateNumbers = false, animateFav = true)
+        // 鸿蒙版这里走的是 animateTo 220ms Friction：胶囊不重建，配色是渐变过去的；
+        // 列表项的位置变化同样在闭包内，也按 220ms Friction 平滑挪位
+        refreshAll(
+            animateNumbers = false,
+            animateFav = true,
+            listMoveMs = 220L,
+            listMoveCurve = Curves.friction
+        )
         // 与鸿蒙版一致：筛完列表别停在半空
         if (binding.scrollMain.scrollY > 0) scrollToTop()
     }
@@ -621,14 +642,25 @@ class MainActivity : AppCompatActivity() {
             return
         }
         sortType = type
-        refreshAll(animateNumbers = false)
+        refreshAll(
+            animateNumbers = false,
+            animateSort = true,
+            listMoveMs = 260L,
+            listMoveCurve = Curves.friction
+        )
     }
 
     /** 切换排序方向（点「排序」或箭头，或点当前已选中的那个排序胶囊） */
     private fun toggleSortDir() {
         sortAsc = !sortAsc
-        // 鸿蒙版是 animateTo 260ms Friction：箭头不重建，配色渐变过去，不是硬切
-        refreshAll(animateNumbers = false, animateSort = true)
+        // 鸿蒙版是 animateTo 260ms Friction：箭头不重建，配色渐变过去，不是硬切；
+        // 列表项的挪位也在这条闭包里，跟着一起动
+        refreshAll(
+            animateNumbers = false,
+            animateSort = true,
+            listMoveMs = 260L,
+            listMoveCurve = Curves.friction
+        )
     }
 
     private fun setChartMode(mode: String) {
@@ -638,28 +670,107 @@ class MainActivity : AppCompatActivity() {
         updateModeChips()
     }
 
+    /**
+     * 展开 / 收起：和鸿蒙版一样动的是"高度"，不是透明度。
+     *
+     * 鸿蒙版 ChartCard 是在 `animateTo({ duration: 260, curve: Curve.EaseOut })` 里改 open 的：
+     * if 块里的组件没有 transition，所以内容是**瞬间**出现 / 消失的，
+     * 真正被动画的是卡片高度 —— 下方的列表在 260ms 内平滑让位。
+     */
     private fun toggleChart() {
         chartOpen = !chartOpen
         binding.btnToggleChart.text = if (chartOpen) "收起" else "展开"
-        if (chartOpen) {
-            binding.chartBody.visibility = View.VISIBLE
-            binding.chartBody.alpha = 0f
-            binding.chartBody.translationY = -8f * density
-            binding.chartBody.animate()
-                .alpha(1f)
-                .translationY(0f)
-                .setDuration(260L)
-                .setInterpolator(DecelerateInterpolator())
-                .start()
+        val body = binding.chartBody
+        val lp = body.layoutParams as LinearLayout.LayoutParams
+        val margin = (10f * density).toInt()
+        val opening = chartOpen
+        chartAnim?.cancel()
+
+        if (opening) {
+            body.visibility = View.VISIBLE
+            // 内容不裁剪：鸿蒙版那块也没有 clip，展开时是整块直接露出来的，
+            // 高度还没长到位的一小会儿会和下面的列表短暂重叠 —— 和鸿蒙版同一个观感
+            body.clipChildren = false
+            binding.chartCard.clipChildren = false
+            lp.height = 0
+            lp.topMargin = 0
+            body.layoutParams = lp
+            val target = measureChartBody()
+            if (target > 0) {
+                animateChartHeight(0, 0, target, margin, opening)
+            } else {
+                lp.height = LinearLayout.LayoutParams.WRAP_CONTENT
+                lp.topMargin = margin
+                body.layoutParams = lp
+                body.clipChildren = true
+            }
             updateChart(animate = true)
         } else {
-            binding.chartBody.animate()
-                .alpha(0f)
-                .setDuration(200L)
-                .setInterpolator(AccelerateInterpolator())
-                .withEndAction { binding.chartBody.visibility = View.GONE }
-                .start()
+            val from = if (body.height > 0) body.height else lp.height
+            // 内容立刻消失（INVISIBLE 不参与绘制，占位由下面动画着的固定高度决定）
+            body.visibility = View.INVISIBLE
+            lp.height = from
+            lp.topMargin = margin
+            body.layoutParams = lp
+            if (from > 0) {
+                animateChartHeight(from, margin, 0, 0, opening)
+            } else {
+                lp.height = LinearLayout.LayoutParams.WRAP_CONTENT
+                lp.topMargin = margin
+                body.layoutParams = lp
+                body.visibility = View.GONE
+            }
         }
+    }
+
+    /** 按当前宽度量一遍图表区的自然高度（只 measure，不动 layoutParams，免得闪一帧） */
+    private fun measureChartBody(): Int {
+        val body = binding.chartBody
+        val w = if (body.width > 0) body.width else binding.chartCard.width
+        if (w <= 0) {
+            return 0
+        }
+        body.measure(
+            View.MeasureSpec.makeMeasureSpec(w, View.MeasureSpec.EXACTLY),
+            View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        )
+        return body.measuredHeight
+    }
+
+    /** 高度 + 上边距一起插值，260ms EaseOut（鸿蒙 ChartCard 的 animateTo 参数） */
+    private fun animateChartHeight(
+        fromH: Int,
+        fromM: Int,
+        toH: Int,
+        toM: Int,
+        opening: Boolean
+    ) {
+        val body = binding.chartBody
+        val lp = body.layoutParams as LinearLayout.LayoutParams
+        val va = android.animation.ValueAnimator.ofFloat(0f, 1f)
+        va.duration = 260L
+        va.interpolator = Curves.easeOut
+        va.addUpdateListener {
+            val f = it.animatedFraction
+            lp.height = (fromH + (toH - fromH) * f).toInt()
+            lp.topMargin = (fromM + (toM - fromM) * f).toInt()
+            body.layoutParams = lp
+        }
+        va.addListener(object : android.animation.AnimatorListenerAdapter() {
+            override fun onAnimationEnd(animation: android.animation.Animator) {
+                val p = body.layoutParams as LinearLayout.LayoutParams
+                p.height = LinearLayout.LayoutParams.WRAP_CONTENT
+                p.topMargin = (10f * density).toInt()
+                body.layoutParams = p
+                if (opening) {
+                    body.clipChildren = true
+                } else {
+                    body.visibility = View.GONE
+                }
+            }
+        })
+        va.start()
+        chartAnim = va
     }
 
     /* ------------------------------ 数据刷新 ------------------------------ */
@@ -685,13 +796,22 @@ class MainActivity : AppCompatActivity() {
     /**
      * @param animateSort 排序方向切换：箭头配色走 260ms 渐变（对齐鸿蒙 animateTo）
      * @param animateFav  "只看收藏"切换：胶囊配色走 220ms 渐变（同上）
+     * @param listMoveMs  列表项挪位的时长，0 表示硬切重排。
+     *                    鸿蒙版排序 / 筛选是在 animateTo 闭包里改状态的，
+     *                    ArkUI 会把由此引起的位置变化按同一参数做成动画。
+     * @param listMoveCurve 列表项挪位的曲线，与上面那条 animateTo 的 curve 对应
      */
     private fun refreshAll(
         animateNumbers: Boolean,
         animateSort: Boolean = false,
-        animateFav: Boolean = false
+        animateFav: Boolean = false,
+        listMoveMs: Long = 0L,
+        listMoveCurve: Interpolator = Curves.friction
     ) {
         val shown = sortedList()
+        if (::listAnimator.isInitialized) {
+            listAnimator.configure(listMoveMs, listMoveCurve)
+        }
         adapter.submit(shown)
 
         val empty = shown.isEmpty()
@@ -762,7 +882,7 @@ class MainActivity : AppCompatActivity() {
         val va = android.animation.ValueAnimator.ofFloat(0f, 1f)
         va.duration = if (first) 900L else 720L
         va.startDelay = if (first) 60L else 0L
-        va.interpolator = DecelerateInterpolator()
+        va.interpolator = Curves.easeOut
         va.addUpdateListener {
             val t = it.animatedValue as Float
             displayTotal = fromTotal + (total - fromTotal) * t
@@ -912,20 +1032,25 @@ class MainActivity : AppCompatActivity() {
         if (show) {
             layer.visibility = View.VISIBLE
             layer.alpha = 0f
-            layer.animate().alpha(1f).setDuration(220L).setInterpolator(DecelerateInterpolator()).start()
             sheet.translationY = h
+            // 鸿蒙版 openEditor 是在 `animateTo({ duration: 280, curve: Curve.EaseOut })` 里
+            // 把 showEditor 置 true 的。animateTo 的参数会覆盖 transition 上写的 220 / 300，
+            // 所以遮罩淡入和面板上移都收在 280ms EaseOut 里
+            layer.animate().alpha(1f).setDuration(280L).setInterpolator(Curves.easeOut).start()
             sheet.animate()
                 .translationY(0f)
-                .setDuration(300L)
-                .setInterpolator(DecelerateInterpolator())
+                .setDuration(280L)
+                .setInterpolator(Curves.easeOut)
                 .start()
         } else {
             hideKeyboard()
-            layer.animate().alpha(0f).setDuration(240L).setInterpolator(AccelerateInterpolator()).start()
+            // 关闭：鸿蒙版 closeEditor 用的是 animateTo 240ms EaseIn，
+            // 它会覆盖 transition 的参数，所以遮罩和面板都收在 240ms EaseIn 里
+            layer.animate().alpha(0f).setDuration(240L).setInterpolator(Curves.easeIn).start()
             sheet.animate()
                 .translationY(h)
                 .setDuration(240L)
-                .setInterpolator(AccelerateInterpolator())
+                .setInterpolator(Curves.easeIn)
                 .withEndAction { layer.visibility = View.GONE }
                 .start()
         }
@@ -1021,43 +1146,42 @@ class MainActivity : AppCompatActivity() {
         showEditor(false)
     }
 
+    /**
+     * 校验提示：鸿蒙版是直接把 errMsg 塞进 if 块里显示的（没包 animateTo），
+     * 所以这里也是硬切出现，不额外加淡入 / 位移。
+     */
     private fun showError(msg: String) {
+        binding.tvError.animate().cancel()
+        binding.tvError.alpha = 1f
+        binding.tvError.translationX = 0f
         binding.tvError.text = msg
         binding.tvError.visibility = View.VISIBLE
-        binding.tvError.alpha = 0f
-        binding.tvError.translationX = -8f * density
-        binding.tvError.animate()
-            .alpha(1f)
-            .translationX(0f)
-            .setDuration(200L)
-            .setInterpolator(DecelerateInterpolator())
-            .start()
     }
 
     /* ------------------------------ 删除确认 ------------------------------ */
 
-    private fun showConfirm(show: Boolean) {
+    /**
+     * @param closeMs 关闭时长：点遮罩 / 取消是 180ms，点"删除"确认是 200ms。
+     *                鸿蒙版分别写在两处 animateTo 里，曲线都是 EaseIn。
+     */
+    private fun showConfirm(show: Boolean, closeMs: Long = 180L) {
         val layer = binding.confirmLayer
         if (show) {
             val target = devices.firstOrNull { it.id == pendingDeleteId }
             binding.tvDeleteName.text = target?.name ?: ""
             layer.visibility = View.VISIBLE
+            // 鸿蒙版只有一条 TransitionEffect.OPACITY 200ms（默认 curve = EaseInOut），
+            // 卡片本身没有缩放动画，所以这里也不给卡片加弹入
             layer.alpha = 0f
-            layer.animate().alpha(1f).setDuration(200L).setInterpolator(DecelerateInterpolator()).start()
-            binding.confirmCard.scaleX = 0.94f
-            binding.confirmCard.scaleY = 0.94f
-            binding.confirmCard.animate()
-                .scaleX(1f)
-                .scaleY(1f)
-                .setDuration(200L)
-                .setInterpolator(DecelerateInterpolator())
-                .start()
+            binding.confirmCard.scaleX = 1f
+            binding.confirmCard.scaleY = 1f
+            layer.animate().alpha(1f).setDuration(200L).setInterpolator(Curves.easeInOut).start()
         } else {
             pendingDeleteId = null
             layer.animate()
                 .alpha(0f)
-                .setDuration(180L)
-                .setInterpolator(AccelerateInterpolator())
+                .setDuration(closeMs)
+                .setInterpolator(Curves.easeIn)
                 .withEndAction { layer.visibility = View.GONE }
                 .start()
         }
@@ -1067,7 +1191,9 @@ class MainActivity : AppCompatActivity() {
         val id = pendingDeleteId ?: return
         devices.removeAll { it.id == id }
         DeviceStore.save(devices)
-        showConfirm(false)
+        // 鸿蒙版 confirmDelete 里关弹窗用的是 animateTo 200ms EaseIn
+        showConfirm(false, closeMs = 200L)
+        // 列表的增删不在 animateTo 里（鸿蒙是先改 deviceList 再 animateTo），所以硬切
         refreshAll(animateNumbers = true)
     }
 
@@ -1080,16 +1206,18 @@ class MainActivity : AppCompatActivity() {
         DeviceStore.saveDark(dark)
 
         binding.ivThemeIcon.setImageResource(if (dark) R.drawable.ic_moon else R.drawable.ic_sun)
+        // 图标旋转写在 .animation(140ms EaseOut) 之上，走的是这条组件动画，
+        // 不是下面 260ms EaseInOut 的换肤动画
         binding.ivThemeIcon.animate()
             .rotation(if (dark) 20f else 0f)
-            .setDuration(260L)
-            .setInterpolator(DecelerateInterpolator())
+            .setDuration(140L)
+            .setInterpolator(Curves.easeOut)
             .start()
 
         themeAnimator?.cancel()
         val va = android.animation.ValueAnimator.ofFloat(0f, 1f)
         va.duration = 260L
-        va.interpolator = AccelerateDecelerateInterpolator()
+        va.interpolator = Curves.easeInOut
         va.addUpdateListener {
             val t = it.animatedValue as Float
             applyTheme(AppTheme.lerp(from, to, t), heavy = false)
@@ -1241,7 +1369,7 @@ class MainActivity : AppCompatActivity() {
         va.duration = 1500L
         va.repeatCount = android.animation.ValueAnimator.INFINITE
         va.repeatMode = android.animation.ValueAnimator.REVERSE
-        va.interpolator = AccelerateDecelerateInterpolator()
+        va.interpolator = Curves.easeInOut
         va.startDelay = 400L   // 与鸿蒙版一致：进场 400ms 后才开始呼吸
         va.addUpdateListener { binding.ivEmpty.translationY = it.animatedValue as Float }
         va.start()

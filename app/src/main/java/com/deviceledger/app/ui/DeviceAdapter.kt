@@ -3,11 +3,10 @@ package com.deviceledger.app.ui
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.animation.AccelerateDecelerateInterpolator
-import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.view.ViewCompat
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.deviceledger.app.R
 import com.deviceledger.app.model.DeviceCalc
@@ -35,10 +34,29 @@ class DeviceAdapter(
      */
     private val enteredKeys: MutableSet<String> = Companion.enteredKeys
 
+    /**
+     * 提交新列表。
+     *
+     * 走 DiffUtil 而不是 notifyDataSetChanged：鸿蒙版排序 / 筛选是在 animateTo 闭包里改
+     * @State 的，ArkUI 会把由此引起的子组件位置变化做成动画（列表项平滑挪位）。
+     * 只有精确派发 move 通知，RecyclerView 才会播放位移动画；
+     * notifyDataSetChanged 会让列表硬切重排。
+     */
     fun submit(list: List<DeviceItem>) {
+        val old = ArrayList(items)
+        val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+            override fun getOldListSize(): Int = old.size
+            override fun getNewListSize(): Int = list.size
+
+            override fun areItemsTheSame(oldPos: Int, newPos: Int): Boolean =
+                DeviceCalc.keyOf(old[oldPos]) == DeviceCalc.keyOf(list[newPos])
+
+            override fun areContentsTheSame(oldPos: Int, newPos: Int): Boolean =
+                old[oldPos] == list[newPos]
+        })
         items.clear()
         items.addAll(list)
-        notifyDataSetChanged()
+        diff.dispatchUpdatesTo(this)
     }
 
     fun applyTheme(t: AppTheme) {
@@ -147,26 +165,34 @@ class DeviceAdapter(
             ivStar.setImageResource(if (favState) R.drawable.ic_star else R.drawable.ic_star_off)
         }
 
-        /** 点星标：先弹大再回落（和鸿蒙版同为 150ms + 260ms 两段） */
+        /**
+         * 点星标：先弹大再回落。
+         * 鸿蒙版 DeviceCard.tapStar 是 150ms EaseOut 冲到 1.34，紧接着 260ms Friction 落回 1，
+         * 这里逐项对齐（原来是 150ms Decelerate + 260ms AccelerateDecelerate）。
+         */
         private fun playStarPop() {
             ivStar.animate().cancel()
             ivStar.animate()
                 .scaleX(1.34f)
                 .scaleY(1.34f)
                 .setDuration(150L)
-                .setInterpolator(DecelerateInterpolator())
+                .setInterpolator(Curves.easeOut)
                 .withEndAction {
                     ivStar.animate()
                         .scaleX(1f)
                         .scaleY(1f)
                         .setDuration(260L)
-                        .setInterpolator(AccelerateDecelerateInterpolator())
+                        .setInterpolator(Curves.friction)
                         .start()
                 }
                 .start()
         }
 
-        /** 错峰入场：透明 + 上移 + 轻微缩放 */
+        /**
+         * 错峰入场：透明 + 上移 + 轻微缩放。
+         * 与鸿蒙版 DeviceCard.aboutToAppear 一致：延迟 24 + min(index,10)×42，
+         * 然后 430ms Curve.Friction 走到终态。
+         */
         fun playEnter(position: Int) {
             val delay = (24 + minOf(position, 10) * 42).toLong()
             itemView.alpha = 0f
@@ -180,7 +206,7 @@ class DeviceAdapter(
                 .scaleY(1f)
                 .setDuration(430L)
                 .setStartDelay(delay)
-                .setInterpolator(AccelerateDecelerateInterpolator())
+                .setInterpolator(Curves.friction)
                 .start()
         }
 

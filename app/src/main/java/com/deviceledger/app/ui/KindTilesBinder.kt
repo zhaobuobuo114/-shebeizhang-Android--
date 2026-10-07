@@ -39,22 +39,28 @@ class KindTilesBinder(
             view.pressEffect(0.92f)
             view.setOnClickListener { onPick(kind.key) }
         }
-        render()
+        render(false)
     }
 
-    fun select(key: String) {
+    /**
+     * @param animate 点格子时传 true：底色 / 描边 / 文字色走 200ms Friction 渐变，
+     *                对应鸿蒙版 `animateTo({ duration: 200, curve: Curve.Friction })`。
+     *                打开面板、换肤这类场合传 false，直接落到终态。
+     */
+    fun select(key: String, animate: Boolean = false) {
         if (selectedKey == key) return
         selectedKey = key
-        render()
+        render(animate)
     }
 
     fun applyTheme(t: AppTheme) {
         theme = t
-        render()
+        render(false)
     }
 
-    private fun render() {
+    private fun render(animate: Boolean) {
         val density = container.resources.displayMetrics.density
+        val duration = if (animate) 200L else 0L
         for (tile in tiles) {
             val root = tile.view.findViewById<View>(R.id.kindRoot)
             val icon = tile.view.findViewById<ImageView>(R.id.ivKindIcon)
@@ -63,11 +69,11 @@ class KindTilesBinder(
             label.text = tile.kind.label
 
             if (tile.kind.key == selectedKey) {
-                label.setTextColor(theme.primary)
-                root.background = borderedDrawable(theme.primarySoft, 13f, theme.primary, 1.5f, density)
+                label.tintTo(theme.primary, 1f, duration)
+                root.tileTo(theme.primarySoft, theme.primary, 1.5f, 13f, density, duration)
             } else {
-                label.setTextColor(theme.chipText)
-                root.background = roundedDrawable(theme.card2, 13f, density)
+                label.tintTo(theme.chipText, 1f, duration)
+                root.tileTo(theme.card2, theme.primary, 0f, 13f, density, duration)
             }
         }
     }
