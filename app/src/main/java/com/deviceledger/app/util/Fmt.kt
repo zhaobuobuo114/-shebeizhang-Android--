@@ -22,6 +22,33 @@ object Fmt {
         return (if (neg) "-" else "") + sb.toString()
     }
 
+    /**
+     * 大金额缩写：满 10 万写成「10.0万」，满 1 亿写成「1.2亿」，其余照常写全。
+     * 只用于空间紧张的地方（如扇形图圆心），列表和汇总卡仍用完整的 money()。
+     */
+    fun moneyCompact(v: Double): String = moneyCompactAs(v, v)
+
+    /**
+     * 按 ref 的量级决定用不用缩写，但换算的是 v。
+     * 滚动动画里金额是从 0 涨上去的，中途会跨过 10 万这条线；
+     * 让过程值跟最终值共用同一套单位，数字才不会中途从「99,999」跳成「10.0万」。
+     */
+    fun moneyCompactAs(v: Double, ref: Double): String {
+        val safe = if (v.isNaN() || v.isInfinite()) 0.0 else v
+        val a = Math.abs(if (ref.isNaN() || ref.isInfinite()) 0.0 else ref)
+        return when {
+            a >= 1e8 -> oneDecimal(safe / 1e8) + "亿"
+            a >= 1e5 -> oneDecimal(safe / 1e4) + "万"
+            else -> money(safe)
+        }
+    }
+
+    /** 保留一位小数（10.0 / 123.5） */
+    private fun oneDecimal(x: Double): String {
+        val s = String.format(Locale.US, "%.1f", x)
+        return s
+    }
+
     /** 日均金额：小于 0.01 时给出提示，避免出现 0.00 的误导 */
     fun smallMoney(v: Double): String {
         if (v > 0 && v < 0.01) return "<0.01"

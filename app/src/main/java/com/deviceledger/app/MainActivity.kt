@@ -44,6 +44,7 @@ import com.deviceledger.app.util.DateUtil
 import com.deviceledger.app.util.DeviceStore
 import com.deviceledger.app.util.Fmt
 import java.util.Calendar
+import java.util.Comparator
 
 class MainActivity : AppCompatActivity() {
 
@@ -56,6 +57,8 @@ class MainActivity : AppCompatActivity() {
     private val devices = mutableListOf<DeviceItem>()
 
     private var sortType: String = "avg"
+    /** 排序方向：false = 倒序（大在前，默认），true = 正序（小在前） */
+    private var sortAsc: Boolean = false
     private var chartMode: String = "amount"
     private var chartOpen: Boolean = true
 
@@ -561,6 +564,9 @@ class MainActivity : AppCompatActivity() {
 
         press(binding.btnFavOnly, 0.90f) { setFavOnly(!favOnly) }
 
+        // 排序方向：点箭头切换正序 / 倒序
+        press(binding.btnSortDir, 0.90f) { toggleSortDir() }
+
         press(binding.sortAvg, 0.90f) { setSort("avg") }
         press(binding.sortPrice, 0.90f) { setSort("price") }
         press(binding.sortDate, 0.90f) { setSort("date") }
@@ -599,8 +605,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setSort(type: String) {
-        if (sortType == type) return
+        if (sortType == type) {
+            // 点的就是当前这一项：翻方向，不改变排序字段
+            toggleSortDir()
+            return
+        }
         sortType = type
+        refreshAll(animateNumbers = false)
+    }
+
+    /** 切换排序方向（点箭头，或点当前已选中的那个排序胶囊） */
+    private fun toggleSortDir() {
+        sortAsc = !sortAsc
         refreshAll(animateNumbers = false)
     }
 
@@ -644,12 +660,14 @@ class MainActivity : AppCompatActivity() {
             list = list.filter { it.favorite }.toMutableList()
         }
         // 与鸿蒙版保持一致：只比主排序字段，不做二次排序（两边的排序都是稳定排序）
-        when (sortType) {
-            "price" -> list.sortWith(compareByDescending<DeviceItem> { it.price })
-            "date" -> list.sortWith(compareByDescending<DeviceItem> { it.buyDate })
-            "days" -> list.sortWith(compareByDescending<DeviceItem> { DeviceCalc.daysUsed(it) })
-            else -> list.sortWith(compareByDescending<DeviceItem> { DeviceCalc.avgPerDay(it) })
+        // 倒序是默认方向，比较器按"大在前"写，正序时整体取反
+        val cmp: Comparator<DeviceItem> = when (sortType) {
+            "price" -> compareByDescending<DeviceItem> { it.price }
+            "date" -> compareByDescending<DeviceItem> { it.buyDate }
+            "days" -> compareByDescending<DeviceItem> { DeviceCalc.daysUsed(it) }
+            else -> compareByDescending<DeviceItem> { DeviceCalc.avgPerDay(it) }
         }
+        list.sortWith(if (sortAsc) cmp.reversed() else cmp)
         return list
     }
 
@@ -790,10 +808,24 @@ class MainActivity : AppCompatActivity() {
         runCatching { Color.parseColor(hex) }.getOrDefault(Color.GRAY)
 
     private fun updateSortChips() {
+        // 正序时文案跟着反过来，免得"日均最高"配上一行从低到高的数据自相矛盾
+        binding.sortAvg.text = if (sortAsc) "日均最低" else "日均最高"
+        binding.sortPrice.text = if (sortAsc) "价格最低" else "价格最高"
+        binding.sortDate.text = if (sortAsc) "最早购买" else "最近购买"
+        binding.sortDays.text = if (sortAsc) "用最短" else "用最久"
         setChip(binding.sortAvg, sortType == "avg", 13f)
         setChip(binding.sortPrice, sortType == "price", 13f)
         setChip(binding.sortDate, sortType == "date", 13f)
         setChip(binding.sortDays, sortType == "days", 13f)
+        updateSortDirIcon()
+    }
+
+    /** 上下箭头：当前方向的那一个点亮（主色 + 不透明），另一个压暗 */
+    private fun updateSortDirIcon() {
+        binding.tvSortUp.setTextColor(if (sortAsc) theme.primary else theme.sub)
+        binding.tvSortUp.alpha = if (sortAsc) 1f else 0.45f
+        binding.tvSortDown.setTextColor(if (sortAsc) theme.sub else theme.primary)
+        binding.tvSortDown.alpha = if (sortAsc) 0.45f else 1f
     }
 
     private fun updateModeChips() {

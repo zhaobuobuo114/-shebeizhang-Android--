@@ -86,8 +86,10 @@ class PieChartView @JvmOverloads constructor(
     }
 
     private fun centerMain(): String {
-        val shown = totalValue() * progress
-        return if (mode == "amount") "¥" + Fmt.money(shown) else Math.round(shown).toString()
+        val total = totalValue()
+        val shown = total * progress
+        // 单位跟最终值保持一致，动画过程里才不会在「99,999」和「10.0万」之间跳一下
+        return if (mode == "amount") "¥" + Fmt.moneyCompactAs(shown, total) else Math.round(shown).toString()
     }
 
     private fun centerSub(): String = if (mode == "amount") "总投入" else "台设备"
@@ -99,7 +101,7 @@ class PieChartView @JvmOverloads constructor(
      */
     private fun centerSettled(): String {
         val total = totalValue()
-        return if (mode == "amount") "¥" + Fmt.money(total) else Math.round(total).toString()
+        return if (mode == "amount") "¥" + Fmt.moneyCompact(total) else Math.round(total).toString()
     }
 
     override fun onDraw(canvas: Canvas) {
