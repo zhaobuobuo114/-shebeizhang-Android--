@@ -85,6 +85,9 @@ class MainActivity : AppCompatActivity() {
 
     private var displayTotal: Double = 0.0
     private var displayAvg: Double = 0.0
+    /** 数字滚动正在前往的目标值：用来判断某次刷新会不会打断正在播的动画 */
+    private var numberTargetTotal: Double = 0.0
+    private var numberTargetAvg: Double = 0.0
     private var firstNumberPlayed: Boolean = false
     private var numberAnimator: android.animation.ValueAnimator? = null
     private var themeAnimator: android.animation.ValueAnimator? = null
@@ -129,13 +132,16 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // 回到前台时对齐一次磁盘数据（跨天时天数也会重算）
+        // 回到前台时对齐一次磁盘数据。
+        // 注意：数据没变就一个字都别碰——refreshAll 会把正在播的进场动画
+        // （数字滚动 900ms、扇形展开 820ms）cancel 掉直接跳到终态，
+        // 鸿蒙版 onPageShow 里 refreshStats 只在数值真的变了才更新 @State，不会打断动画。
         val disk = DeviceStore.load()
-        if (disk.size != devices.size) {
+        if (disk != devices) {
             devices.clear()
             devices.addAll(disk)
+            refreshAll(animateNumbers = true)
         }
-        refreshAll(animateNumbers = false)
     }
 
     override fun onDestroy() {
@@ -194,22 +200,24 @@ class MainActivity : AppCompatActivity() {
         if (want != stickyShown) {
             stickyShown = want
             val bar = binding.stickyBar
-            val h = if (bar.height > 0) bar.height.toFloat() else 52f * density
-            bar.animate().cancel()
-            // 鸿蒙版写的是一条 transition（OPACITY + move TOP，240ms EaseOut），
-            // 出现和消失都走同一条，所以收起也是 240ms EaseOut，不是另起一条更快的
+            // 鸿蒙版的 transition 挂在内层那张卡片上，外层的渐变底不带过渡、直接出现；
+            // 所以这里也只让内层卡片滑 + 淡，外层容器立刻挂上
+            val card = binding.stickyCard
+            val h = if (card.height > 0) card.height.toFloat() else 52f * density
+            card.animate().cancel()
+            // 出现和消失共用同一条 transition（OPACITY + move TOP，240ms EaseOut）
             if (want) {
                 bar.visibility = View.VISIBLE
-                bar.translationY = -h
-                bar.alpha = 0f
-                bar.animate()
+                card.translationY = -h
+                card.alpha = 0f
+                card.animate()
                     .translationY(0f)
                     .alpha(1f)
                     .setDuration(240L)
                     .setInterpolator(Curves.easeOut)
                     .start()
             } else {
-                bar.animate()
+                card.animate()
                     .translationY(-h)
                     .alpha(0f)
                     .setDuration(240L)
@@ -704,7 +712,9 @@ class MainActivity : AppCompatActivity() {
                 body.layoutParams = lp
                 body.clipChildren = true
             }
-            updateChart(animate = true)
+            // 展开时强制重播扇形：鸿蒙版 Canvas 重新挂载会再走一次 onReady，
+            // 动画从头来过；沿用"数据没变就不重播"的判断会让它直接停在终态
+            updateChart(animate = true, force = true)
         } else {
             val from = if (body.height > 0) body.height else lp.height
             // 内容立刻消失（INVISIBLE 不参与绘制，占位由下面动画着的固定高度决定）
@@ -867,13 +877,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun animateNumbers(total: Double, avg: Double, animate: Boolean) {
-        numberAnimator?.cancel()
         if (!animate) {
+            // 已经在滚向同样的目标值就别打断。切排序、切收藏这类操作不改变金额，
+            // 鸿蒙版 refreshStats 判断数值没变就不会更新 @State，滚动照旧播完；
+            // 这边若照样 cancel，数字会"啪"地跳到终态。
+            if (numberAnimator?.isRunning == true &&
+                numberTargetTotal == total && numberTargetAvg == avg
+            ) {
+                return
+            }
+            numberAnimator?.cancel()
             displayTotal = total
             displayAvg = avg
             renderNumbers()
             return
         }
+        numberAnimator?.cancel()
+        numberTargetTotal = total
+        numberTargetAvg = avg
         val fromTotal = displayTotal
         val fromAvg = displayAvg
         // 首次进场：鸿蒙 SummaryCard 是 60ms 延迟 + 900ms；之后每次数据变化是 720ms
@@ -900,12 +921,22 @@ class MainActivity : AppCompatActivity() {
         binding.tvStickyAvg.text = "日均 ¥" + Fmt.smallMoney(displayAvg)
     }
 
-    private fun updateChart(animate: Boolean) {
+    /**
+     * @param force 展开图表时传 true。鸿蒙版收起再展开，Canvas 会重新挂载并走 onReady，
+     *              扇形会重新播放 820ms 的展开动画；这里若沿用"数据没变就不重播"的判断，
+     *              展开时扇形会直接是终态，和鸿蒙版对不上。
+     */
+    private fun updateChart(animate: Boolean, force: Boolean = false) {
         val slices = ChartData.slices(devices, chartMode == "amount")
-        // 数据和上次完全一样时不重播展开动画（回前台、切排序时避免无谓抖动）
-        val changed = slices != lastSlices
+        val changed = force || slices != lastSlices
+        if (!changed) {
+            // 数据没变就整个跳过。早先这里仍会走 setData(animate = false)，
+            // 而 setData 不带动画时会 cancel 掉正在播的展开动画并把 progress 直接置 1 ——
+            // 于是进场那次 820ms 的扇形展开刚起跑就被掐断，看着像"没有动画"。
+            return
+        }
         lastSlices = slices
-        binding.pieChart.setData(slices, chartMode, animate && changed)
+        binding.pieChart.setData(slices, chartMode, animate)
         buildLegend(slices)
     }
 
@@ -964,20 +995,26 @@ class MainActivity : AppCompatActivity() {
         updateSortDirIcon(animate)
     }
 
+    /** 上一次落到箭头上的颜色：用来判断这次刷新到底有没有必要动它们 */
+    private var sortDirUpColor: Int = 0
+    private var sortDirDownColor: Int = 0
+
     /** 上下箭头：当前方向的那一个点亮（主色 + 不透明），另一个压暗 */
     private fun updateSortDirIcon(animate: Boolean = false) {
+        val upC = if (sortAsc) theme.primary else theme.sub
+        val downC = if (sortAsc) theme.sub else theme.primary
+        // 颜色和上次完全一样就别碰：tintTo 会先 cancel 掉正在播的渐变，
+        // 切收藏、点赞星标这类无关刷新会把 260ms 的箭头渐变掐断。
+        // 换肤时颜色会变，判断自然放行。
+        if (!animate && upC == sortDirUpColor && downC == sortDirDownColor) {
+            return
+        }
+        sortDirUpColor = upC
+        sortDirDownColor = downC
         // 260ms 对应鸿蒙 toggleSortDir 的 animateTo({ duration: 260, curve: Curve.Friction })
         val d = if (animate) 260L else 0L
-        binding.tvSortUp.tintTo(
-            if (sortAsc) theme.primary else theme.sub,
-            if (sortAsc) 1f else 0.45f,
-            d
-        )
-        binding.tvSortDown.tintTo(
-            if (sortAsc) theme.sub else theme.primary,
-            if (sortAsc) 0.45f else 1f,
-            d
-        )
+        binding.tvSortUp.tintTo(upC, if (sortAsc) 1f else 0.45f, d)
+        binding.tvSortDown.tintTo(downC, if (sortAsc) 0.45f else 1f, d)
     }
 
     private fun updateModeChips() {
@@ -1347,10 +1384,32 @@ class MainActivity : AppCompatActivity() {
         window.navigationBarColor = t.bg
         WindowInsetsControllerCompat(window, b.root).isAppearanceLightStatusBars = !t.dark
 
+        // 换肤动画期间（heavy = false）也要让卡片和图例跟着一起变：
+        // 鸿蒙版是在 animateTo 里改 @State，整棵树原地重绘，列表颜色是插值过去的；
+        // 这边若只在动画结束时刷一次，列表和图例会在 260ms 后"啪"地硬切。
+        adapter.applyTheme(t)
+        adapter.rethemeVisible(binding.recycler, t)
+        rethemeLegend(t)
         if (heavy) {
-            adapter.applyTheme(t)
             kindBinder.applyTheme(t)
             buildLegend(lastSlices)
+        }
+    }
+
+    /** 图例不重建，只把文字改成当前中间色（换肤动画逐帧调用） */
+    private fun rethemeLegend(t: AppTheme) {
+        val box = binding.legendBox
+        for (i in 0 until box.childCount) {
+            val row = box.getChildAt(i)
+            val name = row.findViewById<TextView>(R.id.tvLegendName)
+            if (name == null) {
+                // 没有数据的那一行是纯 TextView
+                (row as? TextView)?.setTextColor(t.sub)
+                continue
+            }
+            name.setTextColor(t.text2)
+            row.findViewById<TextView>(R.id.tvLegendValue).setTextColor(t.text)
+            row.findViewById<TextView>(R.id.tvLegendPercent).setTextColor(t.sub)
         }
     }
 

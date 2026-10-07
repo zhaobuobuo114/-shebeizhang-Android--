@@ -59,9 +59,23 @@ class DeviceAdapter(
         diff.dispatchUpdatesTo(this)
     }
 
+    /**
+     * 换肤：只记下新主题，再给当前挂着的卡片刷一遍配色。
+     *
+     * 不用 notifyDataSetChanged —— 那会让所有 ViewHolder 重新绑定，
+     * 把正在播的入场动画和列表挪位动画一起打断，动画结束后再硬切一次。
+     * 鸿蒙版换肤时 DeviceCard 只是 @Prop theme 变了，组件不重建，动画照旧播完。
+     */
     fun applyTheme(t: AppTheme) {
         theme = t
-        notifyDataSetChanged()
+    }
+
+    /** 只刷新当前已挂载卡片的配色（换肤动画逐帧调用） */
+    fun rethemeVisible(recycler: RecyclerView, t: AppTheme) {
+        theme = t
+        for (i in 0 until recycler.childCount) {
+            (recycler.getChildViewHolder(recycler.getChildAt(i)) as? VH)?.applyThemeColors(t)
+        }
     }
 
     fun itemAt(position: Int): DeviceItem = items[position]
@@ -163,6 +177,23 @@ class DeviceAdapter(
 
         private fun renderStar() {
             ivStar.setImageResource(if (favState) R.drawable.ic_star else R.drawable.ic_star_off)
+        }
+
+        /**
+         * 只刷配色：不动数据、不复位 transform、不重播动画。
+         * 换肤动画期间每帧调用，卡片颜色和整页一起渐变过去。
+         * 类型标签用的是类型固有色，不随昼夜变化，所以这里不碰它。
+         */
+        fun applyThemeColors(t: AppTheme) {
+            cardRoot.background = roundedDrawable(t.card, 18f, density)
+            ViewCompat.setElevation(cardRoot, 3f * density)
+            tvName.setTextColor(t.text)
+            tvPrice.setTextColor(t.text)
+            tvDate.setTextColor(t.sub)
+            tvDays.setTextColor(t.sub)
+            tvAvgLabel.setTextColor(t.sub)
+            tvAvg.setTextColor(t.accent)
+            tvNote.setTextColor(t.sub)
         }
 
         /**
