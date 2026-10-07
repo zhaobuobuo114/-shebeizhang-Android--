@@ -36,8 +36,10 @@ object Fmt {
     fun moneyCompactAs(v: Double, ref: Double): String {
         val safe = if (v.isNaN() || v.isInfinite()) 0.0 else v
         val a = Math.abs(if (ref.isNaN() || ref.isInfinite()) 0.0 else ref)
+        // 先用"万"试算一次：99,999,999 四舍五入后会变成 10000.0万，这种怪结果直接改用亿
+        val wan = Math.round(a / 1000.0) / 10.0
         return when {
-            a >= 1e8 -> oneDecimal(safe / 1e8) + "亿"
+            wan >= 10000.0 -> oneDecimal(safe / 1e8) + "亿"
             a >= 1e5 -> oneDecimal(safe / 1e4) + "万"
             else -> money(safe)
         }
