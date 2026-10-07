@@ -5,6 +5,24 @@
 
 ---
 
+## v1.4.1（2026-10-07）
+
+提供可用于上架的**正式发布包**。
+
+### 1. release 正式构建
+
+- `build.gradle.kts` 新增 release 签名配置，正式包**不带 debuggable 标记**，不再是调试包。
+- 版本号对齐到 `versionCode 4` / `versionName 1.4`，与应用实际版本一致。
+- 构建命令：`./gradlew assembleRelease`，产物 `app/build/outputs/apk/release/app-release.apk`。
+
+### 2. 证书与口令外置
+
+- 私钥证书放在工程根目录的 `keystore/`，口令写在 `keystore.properties`，
+  两者都不进版本库（`.gitignore` 已排除），公开仓库里不会泄露。
+- 缺少该配置文件时仍能正常编译（只是不出正式签名），便于他人 clone 后直接构建。
+
+---
+
 ## v1.4（2026-10-06）
 
 与鸿蒙版逐项同步：同样的阈值、同样的时长、同样的曲线。

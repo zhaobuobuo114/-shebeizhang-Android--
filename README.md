@@ -112,15 +112,31 @@ Androidshebeizhang
 ## 六、构建
 
 ```bash
-./gradlew assembleDebug      # macOS / Linux
-gradlew.bat assembleDebug    # Windows
+./gradlew assembleDebug       # macOS / Linux
+gradlew.bat assembleDebug     # Windows
 ```
 
-产物：`app/build/outputs/apk/debug/app-debug.apk`。
-也可以直接从 [Releases](../../releases) 下载已打包好的 debug 安装包（无需签名即可安装），
-拷到手机或用 `adb install` 装上试；
-正式发布请在 Android Studio 里 `Build > Generate Signed Bundle / APK`。
+调试包产物：`app/build/outputs/apk/debug/app-debug.apk`。
 
+### 正式发布包
+
+正式包走 release 变体，**不带 debuggable 标记**，用私有证书签名：
+
+```bash
+./gradlew assembleRelease     # 产物 app/build/outputs/apk/release/app-release.apk
+```
+
+签名证书与口令不进版本库，工程根目录放 `keystore.properties` 即可被自动读取
+（文件缺失时仍能编译，只是不出正式签名）：
+
+```properties
+storeFile=../keystore/device-ledger.jks
+storePassword=你的口令
+keyAlias=你的别名
+keyPassword=你的口令
+```
+
+也可以直接从 [Releases](../../releases) 下载已签好的正式安装包。
 APK 内包含全部 41 张设备图标与 3 张功能图标，`AndroidManifest.xml` 无任何权限声明。
 
 ## 七、想再加点什么
@@ -134,6 +150,7 @@ APK 内包含全部 41 张设备图标与 3 张功能图标，`AndroidManifest.x
 
 | 版本 | 内容 |
 | --- | --- |
+| v1.4.1 | 提供正式发布包：新增 release 签名配置（证书与口令外置到 `keystore.properties`），版本号对齐 1.4 |
 | v1.4 | 扇形图中心金额放大、回顶部圆钮、41 类图标默认收一行、收藏（最爱） |
 | v1.3 | 与鸿蒙版逐项对齐：阈值、时长、曲线、配色、两套主题全部色值统一 |
 | v1.2 | 圆心文字字号按弦长自适应；按压反馈覆盖到全部可点控件 |
