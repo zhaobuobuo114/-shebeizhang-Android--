@@ -28,11 +28,14 @@ class DeviceAdapter(
     var theme: AppTheme = AppTheme.lightTheme()
 
     /**
-     * 已播过入场动画的卡片（存的是"内容 key"）。
-     * 用静态集合保存：切换昼夜模式时 Activity 会重建，
-     * 这样列表不会重播一遍入场动画。
+     * 本轮提交里"新出现"的卡片（存的是内容 key）。
+     *
+     * 对应鸿蒙版的规则：ForEach 的数据源里多出一个 key，ArkUI 才新建子组件、
+     * 走 aboutToAppear 播那 430ms 的错峰入场；key 没变、只是换了位置的组件会被复用，不播。
+     * 于是"只看收藏"切走再切回、增删设备、编辑保存这些场景，鸿蒙那边的卡片都会重新飞一遍。
+     * 早先这里用的是一个"播过就记住"的集合，结果这些场景全成了硬切 —— 和鸿蒙对不上。
      */
-    private val enteredKeys: MutableSet<String> = Companion.enteredKeys
+    private val pendingEnter: HashSet<String> = HashSet()
 
     /**
      * 提交新列表。
@@ -44,6 +47,18 @@ class DeviceAdapter(
      */
     fun submit(list: List<DeviceItem>) {
         val old = ArrayList(items)
+        // 先算出这一轮哪些 key 是新冒出来的：它们要播入场动画
+        val oldKeys = HashSet<String>(old.size)
+        for (item in old) {
+            oldKeys.add(DeviceCalc.keyOf(item))
+        }
+        pendingEnter.clear()
+        for (item in list) {
+            val k = DeviceCalc.keyOf(item)
+            if (!oldKeys.contains(k)) {
+                pendingEnter.add(k)
+            }
+        }
         val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
             override fun getOldListSize(): Int = old.size
             override fun getNewListSize(): Int = list.size
@@ -92,13 +107,15 @@ class DeviceAdapter(
         holder.starCb = onStar
         holder.bind(item, theme)
         holder.itemView.setOnClickListener { onClick(item) }
-        // 用"内容 key"而不是 id：鸿蒙版 ForEach 的 key 变了就会重建子组件、重播入场动画，
-        // 所以编辑过的卡片同样会再播一次，这里保持一致
+        // 只给"这一轮新冒出来的 key"播入场，其余直接落到终态。
+        // 编辑过的卡片内容 key 会变，同样算新出现，和鸿蒙端重建子组件的行为一致。
+        // 滚动导致的复用绑定不在 pendingEnter 里，不会重播 —— 鸿蒙 List 复用时也不播。
         val contentKey = DeviceCalc.keyOf(item)
-        if (!enteredKeys.contains(contentKey)) {
-            enteredKeys.add(contentKey)
+        if (pendingEnter.remove(contentKey)) {
             holder.playEnter(position)
-        } else {
+        } else if (!holder.isEntering) {
+            // 入场动画还没播完的卡片别去复位：鸿蒙端组件没被销毁，
+            // 动画会照旧播到终态，这里掐断就会"啪"地一下出现
             holder.resetTransform()
         }
     }
@@ -123,6 +140,15 @@ class DeviceAdapter(
 
         /** 点星标的回调：由适配器在每个 item 绑定前塞进来（VH 是静态嵌套类，拿不到外层成员） */
         var starCb: ((DeviceItem, Boolean) -> Unit)? = null
+
+        /** 入场动画正在播：此时不要去复位 transform，否则动画会被掐断在半路 */
+        private var entering: Boolean = false
+
+        /** 入场动画落位的回调，holder 被复用时要先撤掉 */
+        private var enterEnd: Runnable? = null
+
+        val isEntering: Boolean
+            get() = entering
 
         private val density: Float
             get() = itemView.resources.displayMetrics.density
@@ -230,6 +256,7 @@ class DeviceAdapter(
             itemView.translationY = 26f * density
             itemView.scaleX = 0.96f
             itemView.scaleY = 0.96f
+            entering = true
             itemView.animate()
                 .alpha(1f)
                 .translationY(0f)
@@ -238,11 +265,27 @@ class DeviceAdapter(
                 .setDuration(430L)
                 .setStartDelay(delay)
                 .setInterpolator(Curves.friction)
+                .setListener(null)
                 .start()
+            // 错峰延迟 + 动画时长之后这一张才算落位。
+            // 记下来是为了能在复位时撤掉：holder 被复用后，上一张的回调不能再改这一张的状态
+            clearEnterEnd()
+            enterEnd = Runnable { entering = false }
+            itemView.postDelayed(enterEnd, delay + 430L)
         }
 
-        /** 复位到最终状态（复用 / 已播过动画时调用） */
+        private fun clearEnterEnd() {
+            val r = enterEnd
+            if (r != null) {
+                itemView.removeCallbacks(r)
+                enterEnd = null
+            }
+        }
+
+        /** 复位到最终状态（绑定新数据 / 本轮不是新出现的卡片） */
         fun resetTransform() {
+            clearEnterEnd()
+            entering = false
             itemView.animate().cancel()
             itemView.alpha = 1f
             itemView.translationY = 0f
@@ -254,9 +297,5 @@ class DeviceAdapter(
             ivStar.scaleX = 1f
             ivStar.scaleY = 1f
         }
-    }
-
-    companion object {
-        private val enteredKeys: MutableSet<String> = HashSet()
     }
 }
