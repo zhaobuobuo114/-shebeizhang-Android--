@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 过渡动画的暂存位：上一次的 ValueAnimator、以及胶囊当前显示的底色 -->
+    <item name="tag_tint_anim" type="id" />
+    <item name="tag_chip_anim" type="id" />
+    <item name="tag_chip_bg" type="id" />
+</resources>

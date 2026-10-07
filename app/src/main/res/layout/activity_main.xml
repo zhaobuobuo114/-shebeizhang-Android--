@@ -329,43 +329,55 @@
                     android:paddingTop="14dp"
                     android:paddingBottom="10dp">
 
-                    <TextView
-                        android:id="@+id/tvSortLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginRight="2dp"
-                        android:text="排序"
-                        android:textSize="12sp" />
-
-                    <!-- 正序 / 倒序：上下两个箭头，当前方向的那一个点亮 -->
+                    <!-- 「排序」两个字连同右边的上下双箭头是一整块热区：点哪儿都是切换方向。
+                         左右各留 6dp 内边距，再用 -6dp 外边距顶回去：字的位置不动，热区变大 -->
                     <LinearLayout
-                        android:id="@+id/btnSortDir"
+                        android:id="@+id/sortDirBox"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginLeft="-6dp"
                         android:layout_marginRight="4dp"
-                        android:gravity="center"
-                        android:orientation="vertical"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
                         android:paddingLeft="6dp"
                         android:paddingRight="6dp"
-                        android:paddingTop="3dp"
-                        android:paddingBottom="3dp">
+                        android:paddingTop="5dp"
+                        android:paddingBottom="5dp">
 
                         <TextView
-                            android:id="@+id/tvSortUp"
+                            android:id="@+id/tvSortLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:includeFontPadding="false"
-                            android:text="▲"
-                            android:textSize="9sp" />
+                            android:layout_marginRight="2dp"
+                            android:text="排序"
+                            android:textSize="12sp" />
 
-                        <TextView
-                            android:id="@+id/tvSortDown"
+                        <!-- 正序 / 倒序：上下两个箭头，当前方向的那一个点亮。
+                             间距压成 -1dp，两个三角贴得更紧（与鸿蒙版同一个数） -->
+                        <LinearLayout
+                            android:id="@+id/btnSortDir"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:includeFontPadding="false"
-                            android:layout_marginTop="2dp"
-                            android:text="▼"
-                            android:textSize="9sp" />
+                            android:gravity="center"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/tvSortUp"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:includeFontPadding="false"
+                                android:text="▲"
+                                android:textSize="9sp" />
+
+                            <TextView
+                                android:id="@+id/tvSortDown"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:includeFontPadding="false"
+                                android:layout_marginTop="-1dp"
+                                android:text="▼"
+                                android:textSize="9sp" />
+                        </LinearLayout>
                     </LinearLayout>
 
                     <!-- 胶囊变多了会超出一屏：让这一行横向滑动，"排序"两个字固定不动 -->
