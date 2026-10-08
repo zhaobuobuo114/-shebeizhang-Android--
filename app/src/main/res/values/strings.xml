@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">设备账</string>
+
+    <!-- 首次启动的条款确认 -->
+    <string name="privacy_title">欢迎使用设备账</string>
+    <string name="privacy_body">设备账把你买的每一台设备都记在本机：不联网、不上传、不读取任何与设备无关的个人信息。开始前，请先阅读并同意下面两份条款。</string>
+    <string name="privacy_link_policy">《隐私条款》</string>
+    <string name="privacy_link_terms">《服务条款》</string>
+    <string name="privacy_check">我已阅读并同意上述条款</string>
+    <string name="privacy_agree">同意并进入</string>
+    <string name="privacy_exit">不同意，退出应用</string>
+    <string name="privacy_hint">请先阅读并勾选同意条款</string>
 </resources>
