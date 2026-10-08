@@ -16,6 +16,7 @@ object DeviceStore {
     private const val PREF_NAME = "device_ledger_store"
     private const val KEY_LIST = "device_list"
     private const val KEY_DARK = "dark_mode"
+    private const val KEY_AGREED = "privacy_agreed"
 
     private var prefs: SharedPreferences? = null
 
@@ -96,6 +97,25 @@ object DeviceStore {
         val sp = prefs ?: return
         try {
             sp.edit().putBoolean(KEY_DARK, dark).apply()
+        } catch (e: Exception) {
+            // ignore
+        }
+    }
+
+    /** 是否已阅读并同意隐私条款与服务条款（首次启动时确认过一次就记下来） */
+    fun loadAgreed(): Boolean {
+        val sp = prefs ?: return false
+        return try {
+            sp.getBoolean(KEY_AGREED, false)
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    fun saveAgreed(agreed: Boolean) {
+        val sp = prefs ?: return
+        try {
+            sp.edit().putBoolean(KEY_AGREED, agreed).apply()
         } catch (e: Exception) {
             // ignore
         }

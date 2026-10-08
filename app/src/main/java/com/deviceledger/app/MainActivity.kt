@@ -3,6 +3,7 @@ package com.deviceledger.app
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.app.DatePickerDialog
+import android.app.Dialog
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
@@ -39,6 +40,7 @@ import com.deviceledger.app.ui.DeviceAdapter
 import com.deviceledger.app.ui.GradientBgDrawable
 import com.deviceledger.app.ui.KindTilesBinder
 import com.deviceledger.app.ui.MoveAnimator
+import com.deviceledger.app.ui.PrivacyGate
 import com.deviceledger.app.ui.SortArrowView
 import com.deviceledger.app.ui.WrapLayout
 import com.deviceledger.app.ui.circleDrawable
@@ -97,6 +99,8 @@ class MainActivity : AppCompatActivity() {
     private var themeAnimator: android.animation.ValueAnimator? = null
     private var breathAnimator: android.animation.ValueAnimator? = null
     private var lastSlices: List<PieSlice> = emptyList()
+    /** 首次启动的条款确认框：持有它是为了退出界面时能收掉，不留悬空窗口 */
+    private var privacyDialog: Dialog? = null
 
     private val density: Float
         get() = resources.displayMetrics.density
@@ -130,16 +134,28 @@ class MainActivity : AppCompatActivity() {
         setupKindToggle()
         setupChipFx()
 
-        devices.clear()
-        devices.addAll(DeviceStore.load())
-        refreshAll(animateNumbers = savedInstanceState == null)
+        // 首次启动先把隐私条款与服务条款摆出来，勾选同意之后才把本机数据读进界面
+        if (DeviceStore.loadAgreed()) {
+            loadDevices(animate = savedInstanceState == null)
+        } else {
+            privacyDialog = PrivacyGate.show(this, theme) { loadDevices(animate = true) }
+        }
         applyTheme(theme)
         renderDateText()
         setupBreath()
     }
 
+    /** 把本机存的设备读进内存并整屏刷新一次 */
+    private fun loadDevices(animate: Boolean) {
+        devices.clear()
+        devices.addAll(DeviceStore.load())
+        refreshAll(animateNumbers = animate)
+    }
+
     override fun onResume() {
         super.onResume()
+        // 条款还没确认：这一屏不碰任何本机数据
+        if (privacyDialog?.isShowing == true) return
         // 回到前台时对齐一次磁盘数据。
         // 注意：数据没变就一个字都别碰——refreshAll 会把正在播的进场动画
         // （数字滚动 900ms、扇形展开 820ms）cancel 掉直接跳到终态，
@@ -153,6 +169,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        privacyDialog?.dismiss()
         numberAnimator?.cancel()
         themeAnimator?.cancel()
         breathAnimator?.cancel()
