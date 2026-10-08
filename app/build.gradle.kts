@@ -29,8 +29,8 @@ android {
         applicationId = "com.deviceledger.app"
         minSdk = 24
         targetSdk = 37
-        versionCode = 10
-        versionName = "1.7.0"
+        versionCode = 11
+        versionName = "1.7.1"
     }
 
     signingConfigs {
