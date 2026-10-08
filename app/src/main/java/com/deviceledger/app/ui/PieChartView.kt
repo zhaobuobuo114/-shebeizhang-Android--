@@ -132,25 +132,34 @@ class PieChartView @JvmOverloads constructor(
             val startAngle = -90f
             val fullSweep = 360f * progress
             var drawn = 0f
-            // 鸿蒙版是给每段描一圈 3px 的卡片色边，相邻两段合起来正好是 3px 的缝；
-            // 这里换算成对应的圆心角，保证两边缝隙视觉宽度一致
+            // 相邻两段之间留 3dp 的缝。换算成圆心角后再让位，而不是给每段描一圈边框：
+            // stroke 是以路径为中心向两侧各铺一半的，会把两侧的扇面各吃掉一点，
+            // 份额小的那一段看着就比图例的百分比窄，而且每段的起止角都不准
             val gapDeg = (3f * density / ringRadius) * (180f / Math.PI.toFloat())
+            // 摆得太满时别让缝把小份额那一段整个吃掉
+            val minSweep = 1.2f
 
-            for (s in slices) {
+            for (i in slices.indices) {
                 if (drawn >= fullSweep) break
-                val frac = (s.v / total).toFloat()
-                val fullSliceSweep = 360f * frac
+                val frac = (slices[i].v / total).toFloat()
+                // 最后一段直接收在整圈上，避免逐段累加的浮点误差在 12 点方向留一道细缝
+                val fullSliceSweep = if (i == slices.size - 1) {
+                    (360f - drawn).coerceAtLeast(minSweep)
+                } else {
+                    360f * frac
+                }
                 val visible = min(fullSliceSweep, fullSweep - drawn)
-                // 整段都显示时才留出间隙，避免动画中出现缝隙抖动
-                val sweep = if (visible >= fullSliceSweep) {
-                    (visible - gapDeg).coerceAtLeast(0.2f)
+                // 整段都显示出来时才让出尾巴上的缝，否则动画推进中的那一段会一跳一跳地变窄
+                val whole = visible >= fullSliceSweep - 0.01f
+                val sweep = if (whole) {
+                    (visible - gapDeg).coerceAtLeast(minSweep).coerceAtMost(visible)
                 } else {
                     visible
                 }
-                if (sweep > 0.2f) {
+                if (sweep > 0.05f) {
                     arcPaint.style = Paint.Style.STROKE
                     arcPaint.strokeWidth = rOut - rIn
-                    arcPaint.color = runCatching { Color.parseColor(s.c) }.getOrDefault(Color.GRAY)
+                    arcPaint.color = runCatching { Color.parseColor(slices[i].c) }.getOrDefault(Color.GRAY)
                     canvas.drawArc(oval, startAngle + drawn, sweep, false, arcPaint)
                 }
                 drawn += visible

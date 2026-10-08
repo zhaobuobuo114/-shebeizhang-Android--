@@ -1,5 +1,7 @@
 package com.deviceledger.app
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.app.DatePickerDialog
 import android.content.Context
 import android.graphics.Canvas
@@ -8,6 +10,7 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.view.animation.Interpolator
 import android.view.inputmethod.InputMethodManager
@@ -121,6 +124,7 @@ class MainActivity : AppCompatActivity() {
         setupConfirmWidth()
         setupFavRow()
         setupKindToggle()
+        setupChipFx()
 
         devices.clear()
         devices.addAll(DeviceStore.load())
@@ -181,6 +185,8 @@ class MainActivity : AppCompatActivity() {
     /* ------------------------------ 置顶迷你汇总条 ------------------------------ */
 
     private var stickyShown: Boolean = false
+    /** 置顶条的淡入淡出是否进行到一半：用于判断那一层有没有被打断、要不要补一笔 */
+    private var barAlphaDirty: Boolean = false
 
     /**
      * 整页向下滚动、大总览卡滑出屏幕后，在最上方钉住一小行：
@@ -190,7 +196,10 @@ class MainActivity : AppCompatActivity() {
         binding.scrollMain.setOnScrollChangeListener(
             NestedScrollView.OnScrollChangeListener { _, _, scrollY, _, _ -> updateSticky(scrollY) }
         )
-        binding.root.post { updateSticky(binding.scrollMain.scrollY) }
+        binding.root.post {
+            updateSticky(binding.scrollMain.scrollY)
+            refreshChipFx()
+        }
     }
 
     private fun updateSticky(scrollY: Int) {
@@ -200,29 +209,47 @@ class MainActivity : AppCompatActivity() {
         if (want != stickyShown) {
             stickyShown = want
             val bar = binding.stickyBar
-            // 鸿蒙版的 transition 挂在内层那张卡片上，外层的渐变底不带过渡、直接出现；
-            // 所以这里也只让内层卡片滑 + 淡，外层容器立刻挂上
-            val card = binding.stickyCard
-            val h = if (card.height > 0) card.height.toFloat() else 52f * density
-            card.animate().cancel()
-            // 出现和消失共用同一条 transition（OPACITY + move TOP，240ms EaseOut）
+            bar.animate().cancel()
+            // 整层一起淡，连背后的渐变底色一起走，不做位移。
+            // 早先只让里头那张卡做位移+淡出，外层那道渐变是硬切出来硬切收回的，
+            // 滑回顶部的瞬间会先留一帧深色横条再消失，看着就是闪过一道黑框
             if (want) {
+                barAlphaDirty = true
                 bar.visibility = View.VISIBLE
-                card.translationY = -h
-                card.alpha = 0f
-                card.animate()
-                    .translationY(0f)
+                bar.alpha = 0f
+                bar.animate()
                     .alpha(1f)
                     .setDuration(240L)
                     .setInterpolator(Curves.easeOut)
+                    .setListener(null)
+                    .withEndAction { barAlphaDirty = false }
                     .start()
             } else {
-                card.animate()
-                    .translationY(-h)
+                barAlphaDirty = true
+                bar.animate()
                     .alpha(0f)
                     .setDuration(240L)
                     .setInterpolator(Curves.easeOut)
-                    .withEndAction { bar.visibility = View.GONE }
+                    // 只有还处于收起状态才真的摘掉；中途又往下滚了就留着继续用，
+                    // 免得被上一次动画结束时摘掉之后再也露不出来
+                    .withEndAction {
+                        barAlphaDirty = false
+                        if (!stickyShown) {
+                            bar.visibility = View.GONE
+                        }
+                    }
+                    .start()
+            }
+        } else if (want) {
+            // 状态没变但整层的透明度还没落到位（多半是被上一次动画掐断了），补一笔。
+            // 少了这一步，滚回顶部时会留着一条半透明的深色横杠，看着就像黑框没收干净
+            if (barAlphaDirty && binding.stickyBar.alpha < 1f) {
+                barAlphaDirty = false
+                binding.stickyBar.animate()
+                    .alpha(1f)
+                    .setDuration(120L)
+                    .setInterpolator(Curves.easeOut)
+                    .setListener(null)
                     .start()
             }
         }
@@ -248,6 +275,13 @@ class MainActivity : AppCompatActivity() {
         val btn = binding.btnTop
         btn.animate().cancel()
         if (show) {
+            // 收起时可能停在"起飞"的半路上（原位那枚已经淡没了），
+            // 重新露出来之前先把两枚箭头摆回出发姿态，免得看到一枚空的圆钮
+            binding.ivTop.animate().cancel()
+            binding.ivTop.translationY = 0f
+            binding.ivTop.alpha = 1f
+            binding.ivTopFly.animate().cancel()
+            binding.ivTopFly.alpha = 0f
             btn.visibility = View.VISIBLE
             btn.scaleX = 0.3f
             btn.scaleY = 0.3f
@@ -307,6 +341,153 @@ class MainActivity : AppCompatActivity() {
         va.addUpdateListener { binding.scrollMain.scrollTo(0, it.animatedValue as Int) }
         va.start()
         scrollAnim = va
+    }
+
+    /* --------------------- 回顶部按钮的"起飞"特效 --------------------- */
+
+    private var launchAnim: android.animation.ValueAnimator? = null
+    /** 本轮起飞的凭据：连点时用它把上一轮还没走完的结束回调认出来、丢掉 */
+    private var launchToken: Any? = null
+
+    /**
+     * 点回顶部要走的整套动作：页面照常滚回去，圆钮自己再送一段"起飞"。
+     *
+     * 三件事同时开始，和鸿蒙版 launchTopAction 同一个时序：
+     *   1. 那枚箭头向上飞出圆钮并淡掉（300ms EaseIn）；
+     *   2. 一圈主色光晕从圆钮大小扩到两倍再褪掉（420ms EaseOut）；
+     *   3. 300ms 后一枚新的箭头从下方补回原位（260ms Friction），收成一记完整的"送一趟"。
+     *
+     * 本体本身的压缩回弹由 Press.kt 的 topPressEffect 负责（按下 90ms / 松手 210ms），
+     * 这里不去抢那两个属性，免得两套动画互相掐。
+     */
+    private fun playTopLaunch() {
+        val icon = binding.ivTop
+        val fly = binding.ivTopFly
+        val ring = binding.topRing
+        val d = density
+
+        launchAnim?.cancel()
+        // 回到出发姿态：原位那枚露着，待命的那枚先在下方藏好。
+        // 按键连点时会重新从这里起跑，不会把上一次的残留状态带进来
+        icon.animate().cancel()
+        icon.translationY = 0f
+        icon.alpha = 1f
+        fly.animate().cancel()
+        fly.translationY = 16f * d
+        fly.alpha = 0f
+
+        // 1) 箭头起飞：原位那枚向上送出、淡到全无，之后就一直空着，
+        //    收尾那枚由下面的第 3 步补回来。全程只有一枚可见，
+        //    所以这里结束时不把 alpha 拨回去，否则会闪出第二枚箭头
+        val token = Any()
+        launchToken = token
+        launchAnim = android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 300L
+            interpolator = Curves.easeIn
+            addUpdateListener {
+                val k = it.animatedFraction
+                icon.translationY = -26f * d * k
+                icon.alpha = 1f - k
+            }
+            addListener(object : android.animation.AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator) {
+                    // 被新的一次点击顶掉时（token 已经换人）就不接续了，
+                    // 否则会和新一轮的起飞撞在一起
+                    if (launchToken === token) {
+                        arrive()
+                    }
+                }
+            })
+            start()
+        }
+
+        // 2) 光晕扩散
+        ring.scaleX = 0.62f
+        ring.scaleY = 0.62f
+        ring.alpha = 0.5f
+        ring.animate()
+            .scaleX(2.1f)
+            .scaleY(2.1f)
+            .alpha(0f)
+            .setDuration(420L)
+            .setInterpolator(Curves.easeOut)
+            .start()
+    }
+
+    /**
+     * 起飞之后从下方补回原位的那一枚。
+     *
+     * 挂在起飞动画的结束回调上，而不是掐一个 300ms 的定时器：定时器数的是真实时间，
+     * 系统把动画速度调慢（开发者选项里的动画缩放）时起飞还没走完它就点火了，
+     * 圆钮里会同时挂着两枚箭头。
+     */
+    private fun arrive() {
+        val fly = binding.ivTopFly
+        fly.translationY = 16f * density
+        fly.alpha = 0f
+        fly.animate()
+            .translationY(0f)
+            .alpha(1f)
+            .setDuration(260L)
+            .setInterpolator(Curves.friction)
+            .start()
+    }
+
+    /* --------------------- 排序胶囊的立体转动 --------------------- */
+
+    /**
+     * 这一行的胶囊太多了会横向排不下，本来由 HorizontalScrollView 兜着。
+     * 这里再给它加一层"越线转开"的观感：每颗胶囊按它被可见范围盖掉了多少，
+     * 在 Y 轴上顺着透视转向、同时淡掉——往左没进"排序"那一侧的、往右被屏幕边缘切掉的，
+     * 都像绕到后头去了。
+     *
+     * 依据是"被切掉多少"而不是"离这一行中心多远"：后者会在整行装得下、
+     * 一颗都没被挡住的时候也把最边上那颗转掉压暗，静止看就像坏了。
+     * 算法与鸿蒙版 Index.ets 的 refreshChipFx 是同一套。
+     */
+    private fun setupChipFx() {
+        val scroller = binding.sortScroller
+        scroller.viewTreeObserver.addOnScrollChangedListener { refreshChipFx() }
+        // 布局一落定就得算一次：光靠 post 往往赶在测量之前，
+        // 那时行宽还是 0，会被当成"装得下"而整行都不转；
+        // 而这一行只要没被拖动就不会再有滚动回调来补救
+        scroller.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> refreshChipFx() }
+        // 行内胶囊的宽度变了（换方向时文案长短不同）同样要重量一遍
+        scroller.getChildAt(0)?.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            refreshChipFx()
+        }
+    }
+
+    private fun refreshChipFx() {
+        val scroller = binding.sortScroller
+        val row = scroller.getChildAt(0) as? ViewGroup ?: return
+        val viewW = scroller.width.toFloat()
+        if (viewW <= 0f || row.width <= 0) return
+        val scrollX = scroller.scrollX.toFloat()
+        // 整行比视口宽出来的部分；<=0 表示全都能看见，那就没有可转的东西
+        val overflow = row.width - viewW
+
+        for (i in 0 until row.childCount) {
+            val chip = row.getChildAt(i)
+            if (chip.width <= 0) continue
+            if (overflow <= 0.5f) {
+                chip.rotationY = 0f
+                chip.alpha = 1f
+                continue
+            }
+            val w = chip.width.toFloat()
+            val left = chip.left.toFloat()
+            // 左边界是"排序"那一侧，右边界是屏幕边缘：分别量一下被它们盖掉多宽
+            val hiddenLeft = (scrollX - left).coerceIn(0f, w)
+            val hiddenRight = ((left + w) - (scrollX + viewW)).coerceIn(0f, w)
+            val frac = ((hiddenLeft + hiddenRight) / w).coerceIn(0f, 1f)
+            // 透视距离先定下来，转角才有厚度，不然只是被横向压扁
+            chip.cameraDistance = 1200f * density
+            // 往右滚出去（被右边切掉）转向一侧，往左没进"排序"里的转向另一侧
+            chip.rotationY = (hiddenRight - hiddenLeft) / w * 42f
+            // 遮挡越多掉得越快：刚压线时几乎看不出来，越往外越淡
+            chip.alpha = 1f - 0.92f * Math.pow(frac.toDouble(), 1.6).toFloat()
+        }
     }
 
     /* ------------------------------ 列表 ------------------------------ */
@@ -605,7 +786,10 @@ class MainActivity : AppCompatActivity() {
 
         // 回顶部圆钮：鸿蒙版不走通用 sc()，是按下 90ms 压到 0.84、松手 210ms 弹回
         binding.btnTop.topPressEffect { if (topShown) 1f else 0.4f }
-        binding.btnTop.setOnClickListener { scrollToTop() }
+        binding.btnTop.setOnClickListener {
+            scrollToTop()
+            playTopLaunch()
+        }
         // 置顶那条汇总也可以点，点了同样回顶部（鸿蒙版一致）
         press(binding.stickyBar) { scrollToTop() }
 
@@ -952,8 +1136,11 @@ class MainActivity : AppCompatActivity() {
             return
         }
         val total = ChartData.total(slices)
+        // 百分比统一由「最大余数法」分配，整列加起来精确等于 100%
+        val pct = ChartData.percents(slices)
         val inflater = layoutInflater
-        for (s in slices) {
+        for (i in slices.indices) {
+            val s = slices[i]
             val row = inflater.inflate(R.layout.item_legend, box, false)
             val dot = row.findViewById<View>(R.id.legendDot)
             val name = row.findViewById<TextView>(R.id.tvLegendName)
@@ -968,7 +1155,7 @@ class MainActivity : AppCompatActivity() {
                 Math.round(s.v).toString() + " 台"
             }
             value.setTextColor(theme.text)
-            percent.text = if (total > 0) Fmt.percent(s.v / total) else "0%"
+            percent.text = if (total > 0) (pct[i].toString() + "%") else "0%"
             percent.setTextColor(theme.sub)
             box.addView(row)
         }
@@ -993,17 +1180,24 @@ class MainActivity : AppCompatActivity() {
         setChip(binding.sortDate, sortType == "date", 13f)
         setChip(binding.sortDays, sortType == "days", 13f)
         updateSortDirIcon(animate)
+        // 换方向时四个胶囊的文案长短会变（"日均最高"↔"日均最低"），宽度一变，
+        // 各自离这一行中心的距离就跟着变，得把它们的转角重算一遍
+        if (animate) {
+            binding.sortScroller.post { refreshChipFx() }
+        }
     }
 
     /** 上一次落到箭头上的颜色：用来判断这次刷新到底有没有必要动它们 */
     private var sortDirUpColor: Int = 0
     private var sortDirDownColor: Int = 0
+    /** 上下箭头整组的累计翻转角：每次换方向加 180°，一直往同一个方向转 */
+    private var sortFlipDeg: Float = 0f
 
     /** 上下箭头：当前方向的那一个点亮（主色 + 不透明），另一个压暗 */
     private fun updateSortDirIcon(animate: Boolean = false) {
         val upC = if (sortAsc) theme.primary else theme.sub
         val downC = if (sortAsc) theme.sub else theme.primary
-        // 颜色和上次完全一样就别碰：tintTo 会先 cancel 掉正在播的渐变，
+        // 颜色和上次完全一样就别碰：过渡会先 cancel 掉正在播的那一半，
         // 切收藏、点赞星标这类无关刷新会把 260ms 的箭头渐变掐断。
         // 换肤时颜色会变，判断自然放行。
         if (!animate && upC == sortDirUpColor && downC == sortDirDownColor) {
@@ -1013,8 +1207,29 @@ class MainActivity : AppCompatActivity() {
         sortDirDownColor = downC
         // 260ms 对应鸿蒙 toggleSortDir 的 animateTo({ duration: 260, curve: Curve.Friction })
         val d = if (animate) 260L else 0L
-        binding.tvSortUp.tintTo(upC, if (sortAsc) 1f else 0.45f, d)
-        binding.tvSortDown.tintTo(downC, if (sortAsc) 0.45f else 1f, d)
+        binding.arrowSortUp.arrowTo(upC, if (sortAsc) 1f else 0.45f, d)
+        binding.arrowSortDown.arrowTo(downC, if (sortAsc) 0.45f else 1f, d)
+        if (animate) {
+            // 整组翻半圈：两个三角在 X 轴上转着交接，同时完成"点亮的那一个换手"
+            doSortFlip()
+        }
+    }
+
+    /**
+     * 箭头组绕 X 轴转半圈。用 rotateX 而不是换位置：
+     * 位置换过去只是"跳一下"，转过去才看得出这两个三角是同一组东西的两面。
+     * 透视距离按 dp 给，不然 3D 旋转会被压成单纯的纵向压缩，没有厚度。
+     */
+    private fun doSortFlip() {
+        val group = binding.arrowsSort
+        group.cameraDistance = 1200f * density
+        sortFlipDeg += 180f
+        group.animate()
+            .rotationX(sortFlipDeg)
+            .setDuration(260L)
+            .setInterpolator(Curves.friction)
+            .setListener(null)
+            .start()
     }
 
     private fun updateModeChips() {
@@ -1320,6 +1535,9 @@ class MainActivity : AppCompatActivity() {
         b.btnTop.background = circleDrawable(t.primary)
         ViewCompat.setElevation(b.btnTop, 6f * d)
         b.ivTop.alpha = 1f
+        // 点下去时扩出去的那圈光晕也是主色，跟着换肤一起褪
+        b.topRing.background = circleDrawable(t.primary)
+        b.ivTopFly.alpha = 0f
 
         // 收藏相关（星标金随昼夜切换，所以要跟着主题刷一遍）
         updateFavChip()
