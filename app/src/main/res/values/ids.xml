@@ -8,4 +8,13 @@
     <item name="tag_tile_bg" type="id" />
     <item name="tag_tile_stroke" type="id" />
     <item name="tag_tile_stroke_w" type="id" />
+    <!-- 排序方向三角自绘控件的渐变动画暂存位 -->
+    <item name="tag_arrow_anim" type="id" />
+    <!-- 排序胶囊那一行的横向滚动容器 -->
+    <item name="sortScroller" type="id" />
+    <item name="arrowSortUp" type="id" />
+    <item name="arrowSortDown" type="id" />
+    <item name="arrowsSort" type="id" />
+    <item name="topRing" type="id" />
+    <item name="ivTopFly" type="id" />
 </resources>

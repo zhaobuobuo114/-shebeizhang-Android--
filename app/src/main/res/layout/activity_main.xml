@@ -348,40 +348,39 @@
                             android:id="@+id/tvSortLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginRight="2dp"
+                            android:layout_marginRight="3dp"
                             android:text="排序"
                             android:textSize="12sp" />
 
-                        <!-- 正序 / 倒序：上下两个箭头，当前方向的那一个点亮。
-                             间距压成 -1dp，两个三角贴得更紧（与鸿蒙版同一个数） -->
+                        <!-- 正序 / 倒序：两枚自绘的实心小三角，当前方向的那一个点亮。
+                             整组在切换方向时会绕 X 轴翻半圈，两个三角转着交接。
+                             早先这里是 Unicode 的 ▲ / ▼ 字符，字形的胖瘦重心
+                             由系统字体决定，各家手机上长得都不一样，换成自绘之后才统一 -->
                         <LinearLayout
-                            android:id="@+id/btnSortDir"
+                            android:id="@+id/arrowsSort"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:gravity="center"
                             android:orientation="vertical">
 
-                            <TextView
-                                android:id="@+id/tvSortUp"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:includeFontPadding="false"
-                                android:text="▲"
-                                android:textSize="9sp" />
+                            <com.deviceledger.app.ui.SortArrowView
+                                android:id="@+id/arrowSortUp"
+                                android:layout_width="10dp"
+                                android:layout_height="6dp" />
 
-                            <TextView
-                                android:id="@+id/tvSortDown"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:includeFontPadding="false"
-                                android:layout_marginTop="-1dp"
-                                android:text="▼"
-                                android:textSize="9sp" />
+                            <com.deviceledger.app.ui.SortArrowView
+                                android:id="@+id/arrowSortDown"
+                                android:layout_width="10dp"
+                                android:layout_height="6dp"
+                                android:layout_marginTop="2dp" />
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- 胶囊变多了会超出一屏：让这一行横向滑动，"排序"两个字固定不动 -->
+                    <!-- 胶囊变多了会超出一屏：让这一行横向滑动，"排序"两个字固定不动。
+                         滑动时每颗胶囊会跟着它离行中心多远做 Y 轴透视转动，
+                         拨到左右边缘的那几颗就顺着视角转到后头去了 -->
                     <HorizontalScrollView
+                        android:id="@+id/sortScroller"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -614,12 +613,31 @@
         android:layout_marginBottom="26dp"
         android:visibility="gone">
 
+        <!-- 点下去时向四周扩出去的一圈光晕：从圆钮那么大扩到两倍再褪掉。
+             它必须画得比圆钮大，所以这一层不能被裁剪 -->
+        <View
+            android:id="@+id/topRing"
+            android:layout_width="46dp"
+            android:layout_height="46dp"
+            android:layout_gravity="center"
+            android:alpha="0" />
+
         <ImageView
             android:id="@+id/ivTop"
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:layout_gravity="center"
             android:contentDescription="回到顶部"
+            android:src="@drawable/ic_top" />
+
+        <!-- 起飞的那枚箭头：从圆钮里往外送出去，落定的一枚紧跟其后从下方补回 -->
+        <ImageView
+            android:id="@+id/ivTopFly"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:alpha="0"
+            android:contentDescription="@null"
             android:src="@drawable/ic_top" />
     </FrameLayout>
 
