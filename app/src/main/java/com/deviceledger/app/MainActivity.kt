@@ -39,6 +39,7 @@ import com.deviceledger.app.ui.DeviceAdapter
 import com.deviceledger.app.ui.GradientBgDrawable
 import com.deviceledger.app.ui.KindTilesBinder
 import com.deviceledger.app.ui.MoveAnimator
+import com.deviceledger.app.ui.SortArrowView
 import com.deviceledger.app.ui.WrapLayout
 import com.deviceledger.app.ui.circleDrawable
 import com.deviceledger.app.ui.pressEffect
@@ -113,6 +114,9 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        // 上下两个三角各画一个方向：上面尖朝上、下面尖朝下。这一对形状就是"方向指示"的本体，
+        // 整组翻半圈时它们连着形状一起转过去，翻完之后仍是"上尖朝上、下尖朝下"的样子。
+        binding.arrowSortDown.dir = SortArrowView.Dir.DOWN
         theme = AppTheme.of(dark)
 
         setupOutline()
@@ -1192,11 +1196,19 @@ class MainActivity : AppCompatActivity() {
     private var sortDirDownColor: Int = 0
     /** 上下箭头整组的累计翻转角：每次换方向加 180°，一直往同一个方向转 */
     private var sortFlipDeg: Float = 0f
+    /** 整组翻过半圈之后，写在上面的那个三角其实落到了下面：配色要按"翻完之后谁在上面"给 */
+    private var sortFlipped: Boolean = false
 
     /** 上下箭头：当前方向的那一个点亮（主色 + 不透明），另一个压暗 */
     private fun updateSortDirIcon(animate: Boolean = false) {
-        val upC = if (sortAsc) theme.primary else theme.sub
-        val downC = if (sortAsc) theme.sub else theme.primary
+        // 整组绕 X 轴翻半圈后，两个三角是互换位置的：写在上头的那个会转到下头去，
+        // 顺带把自己镜像成朝下的形状。所以"点亮哪一个"要看翻完之后谁落在上面，
+        // 而不是看谁被写在布局前面 —— 不然无论切几次方向，亮着的总是下面那一个。
+        if (animate) sortFlipped = !sortFlipped
+        val upOnTop = !sortFlipped
+        val upActive = (upOnTop == sortAsc)
+        val upC = if (upActive) theme.primary else theme.sub
+        val downC = if (upActive) theme.sub else theme.primary
         // 颜色和上次完全一样就别碰：过渡会先 cancel 掉正在播的那一半，
         // 切收藏、点赞星标这类无关刷新会把 260ms 的箭头渐变掐断。
         // 换肤时颜色会变，判断自然放行。
@@ -1207,8 +1219,8 @@ class MainActivity : AppCompatActivity() {
         sortDirDownColor = downC
         // 260ms 对应鸿蒙 toggleSortDir 的 animateTo({ duration: 260, curve: Curve.Friction })
         val d = if (animate) 260L else 0L
-        binding.arrowSortUp.arrowTo(upC, if (sortAsc) 1f else 0.45f, d)
-        binding.arrowSortDown.arrowTo(downC, if (sortAsc) 0.45f else 1f, d)
+        binding.arrowSortUp.arrowTo(upC, if (upActive) 1f else 0.45f, d)
+        binding.arrowSortDown.arrowTo(downC, if (upActive) 0.45f else 1f, d)
         if (animate) {
             // 整组翻半圈：两个三角在 X 轴上转着交接，同时完成"点亮的那一个换手"
             doSortFlip()
