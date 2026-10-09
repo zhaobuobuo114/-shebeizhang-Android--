@@ -37,6 +37,7 @@ import com.deviceledger.app.ui.AppTheme
 import com.deviceledger.app.ui.CardColors
 import com.deviceledger.app.ui.Curves
 import com.deviceledger.app.ui.DeviceAdapter
+import com.deviceledger.app.ui.FieldCompat
 import com.deviceledger.app.ui.GradientBgDrawable
 import com.deviceledger.app.ui.KindTilesBinder
 import com.deviceledger.app.ui.MoveAnimator
@@ -133,6 +134,9 @@ class MainActivity : AppCompatActivity() {
         setupFavRow()
         setupKindToggle()
         setupChipFx()
+        // 输入框加固：给选择手柄配透明占位 Drawable，并关掉自动填充。
+        // 部分厂商 ROM（含 HarmonyOS 的安卓兼容层）在这两处会抛空指针导致闪退。
+        FieldCompat.apply(binding.etName, binding.etPrice, binding.etNote)
 
         // 首次启动先把隐私条款与服务条款摆出来，勾选同意之后才把本机数据读进界面
         if (DeviceStore.loadAgreed()) {
