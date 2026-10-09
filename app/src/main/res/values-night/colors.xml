@@ -10,4 +10,9 @@
     <!-- 按下态水印色：中性白，覆盖主题默认的蓝色高亮，避免点击出现蓝边 -->
     <color name="press_highlight">#1FFFFFFF</color>
     <color name="text_highlight">#335B8CFF</color>
+
+    <!-- 交给系统控件（日期选择器里的日历等）用的文字色，与代码里 AppTheme 的 text/text2/sub 同值 -->
+    <color name="system_text_primary">#F3F6FB</color>
+    <color name="system_text_secondary">#C7D0DE</color>
+    <color name="system_text_tertiary">#818B9C</color>
 </resources>

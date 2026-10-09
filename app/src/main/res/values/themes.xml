@@ -8,8 +8,17 @@
         <item name="colorPrimary">@color/primary_light</item>
         <item name="colorAccent">@color/accent_light</item>
         <item name="android:colorAccent">@color/accent_light</item>
-        <item name="android:textColorPrimary">#171A21</item>
         <item name="android:windowContentOverlay">@null</item>
+
+        <!--
+          交给系统控件用的文字色。这里**不能**写死十六进制：日期选择器里的日历是拿
+          Activity 的 context 充气的，它的月份标题、日期数字、表头大字都取
+          ?android:textColorPrimary。写成一个固定值，换到另一套底色上明度就对不上了。
+          对应的颜色在 values/ 与 values-night/ 各有一份，运行时按当前昼夜解析。
+        -->
+        <item name="android:textColorPrimary">@color/system_text_primary</item>
+        <item name="android:textColorSecondary">@color/system_text_secondary</item>
+        <item name="android:textColorTertiary">@color/system_text_tertiary</item>
 
         <!-- 所有按压/水波纹高亮统一改成中性色，彻底去掉点击时出现的蓝色边框 -->
         <item name="colorControlHighlight">@color/press_highlight</item>
@@ -19,8 +28,13 @@
         <item name="android:colorControlActivated">@color/primary_light</item>
         <!-- 列表边缘、滚动条不用系统强调色 -->
         <item name="android:colorEdgeEffect">@color/press_highlight</item>
-        <item name="android:textSelectHandle">@null</item>
-        <item name="android:textSelectHandleLeft">@null</item>
-        <item name="android:textSelectHandleRight">@null</item>
+        <!--
+          这里必须是「透明 Drawable」而不是 @null：绘制光标手柄时系统会直接解引用这个
+          Drawable，各家 ROM 对 null 的处理并不一致。透明占位既看不见手柄，对象又不为空。
+          详见 drawable/text_select_handle.xml。
+        -->
+        <item name="android:textSelectHandle">@drawable/text_select_handle</item>
+        <item name="android:textSelectHandleLeft">@drawable/text_select_handle</item>
+        <item name="android:textSelectHandleRight">@drawable/text_select_handle</item>
     </style>
 </resources>

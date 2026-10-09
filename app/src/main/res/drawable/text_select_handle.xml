@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  文本选择手柄（光标下方那个水滴）用的占位 Drawable。
+
+  这里的坑：早期为了不显示这个手柄，在主题里直接写了
+  android:textSelectHandle="@null"。点击输入框要把光标手柄画出来时，
+  AOSP 原生会容错跳过，但三星等部分厂商 ROM 会直接解引用这个 Drawable，
+  于是抛 NullPointerException、应用闪退 —— 表现为「有些机型一碰输入框就崩」，
+  而原生系统/模拟器怎么点都不崩，很容易漏掉。
+
+  正确做法不是给 @null，而是给一个透明的 Drawable：既保留「看不见手柄」的视觉，
+  又保证指针非空。尺寸保留一个名义大小，避免厂商做 /2 之类的算术时出问题。
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@android:color/transparent" />
+    <size
+        android:width="8dp"
+        android:height="8dp" />
+</shape>

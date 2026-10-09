@@ -11,4 +11,12 @@
     <!-- 按下态水印色：中性灰，覆盖主题默认的蓝色高亮，避免点击出现蓝边 -->
     <color name="press_highlight">#14000000</color>
     <color name="text_highlight">#332B5CFF</color>
+
+    <!--
+      交给系统控件（日期选择器里的日历等）用的文字色，与代码里 AppTheme 的 text/text2/sub 同值。
+      这几个必须按昼夜分两套，否则日历上的月份标题与日期数字在其中一套底色上明度就对不上。
+    -->
+    <color name="system_text_primary">#171A21</color>
+    <color name="system_text_secondary">#3E4655</color>
+    <color name="system_text_tertiary">#8B94A3</color>
 </resources>
