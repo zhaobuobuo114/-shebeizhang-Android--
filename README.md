@@ -46,8 +46,12 @@
 | 收藏 | 卡片右下角星标切换收藏；排序栏「★ 收藏 N」胶囊可只看收藏 |
 | 回顶部 | 向下滚过 320dp 浮出圆钮，按距离自适应（≤460ms）滚回顶部；置顶条也可点；点下去圆钮会送出一段「起飞」动效 |
 | 编辑 | 点卡片直接改，日期、类型、价格全部回显 |
-| 删除 | 列表左滑露出红色删除按钮 → 二次确认 |
+| 删除 | 列表左滑露出红色删除按钮 → 二次确认；删掉的不真删，先进回收站，底部撤销条可当场捞回 |
+| 回收站 | 被删设备保留 30 天，满期自动清除；可单独还原或彻底删除 |
 | 持久化 | SharedPreferences + JSON，杀进程 / 重启不丢 |
+| 里程碑勋章 | 14 枚（首台、十台、万元户、用满三年、回本达人……）；点总览卡右侧胶囊开勋章墙，未解锁的灰着并写明达成条件；拿到过就永远亮着，删设备让数字回落也不熄灭 |
+| 达成弹屏 | 点亮勋章时全屏庆祝：勋章自下方升起转半圈、落位轻弹，背后一朵短小烟花；一次点亮多枚可左右划看；震动走系统触感通道，未新增权限 |
+| 备份与恢复 | 自动滚动备份 5 份、保留 30 天，连回收站与勋章一起走；可从文件恢复，覆盖前必先留底，留底失败即中止。导出文件只写设备与勋章 id，`FORMAT / VERSION / 41 类 key / 14 枚 id` 是与鸿蒙版的互通契约 |
 | 昼夜模式 | 右上角太阳 / 月亮切换，260ms 颜色插值过渡，选择会被记住，系统控件同步跟随 |
 | 首次启动 | 进来先阅读《隐私条款》与《服务条款》，两份条款用系统浏览器打开；勾选同意后才能进应用，不同意可直接退出，确认过一次就不再打扰 |
 | 隐私 | 纯本地，不联网，不申请任何权限 |
@@ -68,6 +72,7 @@
 | 排序方向箭头 | 上下两个自绘实心三角各占一个朝向，切换方向时整组绕 X 轴翻半圈 260ms，翻完后仍是「上尖朝上、下尖朝下」，点亮的那一个随翻转换手 |
 | 回顶部「起飞」 | 箭头送出 300ms（EaseIn）+ 光晕扩散 420ms（EaseOut）+ 新箭头自下方补回 260ms |
 | 置顶汇总条 | 整层（含背后渐变底）240ms 整体渐隐渐现 |
+| 勋章达成弹屏 | 遮罩淡入 240ms；勋章自下方 120dp 升起并转半圈 620ms，末段 1.12→1.0 是落位那一下轻弹；烟花在落位那一刻起爆，14 颗粒子、560ms、亮度六成；1.2s 后淡出关闭提示 |
 
 ## 四、目录结构
 
@@ -82,10 +87,13 @@ Androidshebeizhang
     │   ├── model
     │   │   ├── DeviceItem.kt             数据模型 + 天数 / 日均计算 + 脏数据清洗
     │   │   ├── DeviceKind.kt             41 种设备类型表（标签 / 配色 / 图标映射）
+    │   │   ├── TrashItem.kt              回收站条目（被删设备 + 删除时间，30 天后清除）
+    │   │   ├── Badge.kt                  14 枚里程碑勋章清单与判定（id / 名称 / 达成条件是双端契约）
     │   │   └── ChartData.kt              按类型聚合成饼图数据（最多 6 段，其余合并）
     │   ├── util
-    │   │   ├── DateUtil.kt               日期解析、天数差、人性化文案
-    │   │   ├── DeviceStore.kt            SharedPreferences 增删改查 + 主题持久化
+    │   │   ├── DateUtil.kt               日期解析、天数差（正午日序号）、脏日期修复、人性化文案
+    │   │   ├── DeviceStore.kt            SharedPreferences 增删改查 + 回收站 + 主题持久化
+    │   │   ├── BackupStore.kt            5 份滚动自动备份与恢复（校验 format / version，覆盖前先留底）
     │   │   └── Fmt.kt                    金额格式化（千分位、日均、色值透明度）
     │   └── ui
     │       ├── Theme.kt                  昼夜两套配色 + 插值 + 圆角 / 渐变 Drawable 工厂
@@ -99,12 +107,23 @@ Androidshebeizhang
     │       ├── Tint.kt                   文字与图标的颜色渐变工具
     │       ├── Press.kt                  按压反馈（缩放 + 回弹）
     │       ├── PrivacyGate.kt            首次启动的条款确认（勾选同意 / 退出应用）
-    │       └── FieldCompat.kt            输入框加固：选择手柄占位 Drawable + 关闭自动填充
+    │       ├── FieldCompat.kt            输入框加固：选择手柄占位 Drawable + 关闭自动填充
+    │       ├── SheetKit.kt               底部弹层公共骨架（遮罩、拖拽关闭、返回键）
+    │       ├── ConfirmSheet.kt           二次确认弹层
+    │       ├── TrashSheet.kt             回收站弹层（还原 / 彻底删除）
+    │       ├── DataSheet.kt              备份与恢复弹层（5 份槽位、导入导出）
+    │       ├── UndoBar.kt                底部撤销条（删除后限时捞回）
+    │       ├── BadgeWall.kt              勋章墙（未解锁运行时去饱和 + 35% 透明）
+    │       ├── BadgeCelebration.kt       达成庆祝弹屏（根布局覆盖层，非 Dialog）
+    │       └── SparkleView.kt            一次性烟花（14 颗粒子的写死表，与鸿蒙端逐行相同）
     └── res
         ├── layout/                       activity_main / dialog_privacy / item_device / item_kind / item_legend
-        ├── drawable-nodpi/dev_*.png      41 张 Q 版设备插画 + ic_sun / ic_moon / ic_empty
+        │                                 / view_badge_celebration / item_badge_page / dialog_sheet
+        ├── drawable-nodpi/               41 张 dev_*.png 设备插画 + 14 张 badge_*.png 勋章插画 + badge_medal
+        │                                 + ic_sun / ic_moon / ic_empty / ic_star / ic_star_off / ic_top
         ├── mipmap-*                      启动图标（自适应图标 + 各密度方形图标）
         ├── values/                       colors / themes / strings
+        ├── xml/file_paths.xml            FileProvider 导出路径
         └── values-night/colors.xml       深色启动底色，防冷启动白闪
 ```
 
@@ -121,6 +140,7 @@ Androidshebeizhang
 | 按压动效 | `@State pressedKey` + `.scale()`（0.92 / 小胶囊 0.9，140ms） | `ui/Press.kt` 的 `pressEffect()`，同样 0.92 / 0.9 与 140ms，**不改透明度** |
 | 主题 | `@State theme` 整体重绘 | `AppTheme.lerp` 做 260ms 颜色插值，动画结束后调用 `AppCompatDelegate.setDefaultNightMode`，让日期选择器等系统控件同步 |
 | 渐变 | 系统渐变 | 页面底色与总览卡用自定义 `GradientBgDrawable`（支持非等分停靠点，与鸿蒙 0.0 / 0.28 / 1.0 一致） |
+| 勋章达成震动 | **不主动震动**：`@ohos.vibrator` 与 `@system.vibrator` 都要求 `ohos.permission.VIBRATE`，为守住 `requestPermissions: []` 的零权限定位而不调用，只保留系统默认按压反馈 | `performHapticFeedback`，本就不需要权限，用户在系统里关掉触感时自然不震 |
 
 ## 六、构建
 
@@ -169,11 +189,12 @@ legacyKeyPassword=android
 
 两个包选哪个：要提交应用市场就用正式包，自己手机上从旧版升上来就用覆盖升级包。
 也可以直接从 [Releases](../../releases) 下载已签好的安装包。
-APK 内包含全部 41 张设备图标与 3 张功能图标，`AndroidManifest.xml` 无任何权限声明。
+APK 内包含 41 张设备图标、14 枚勋章插画与一枚奖牌入口图，`AndroidManifest.xml` 无任何权限声明。
 
 ## 七、想再加点什么
 
-- **导出 CSV / 备份**：在 `DeviceStore` 里把同一份 JSON 写到 `filesDir` 即可。
+- **导出 CSV**：JSON 备份已经有了（`util/BackupStore.kt`，5 份滚动槽位、保留 30 天、连回收站与勋章一起走），
+  要给人对着看的表格，在它之上再加一层 CSV 写出即可。
 - **换数据库**：数据量大时改用 Room，`DeviceStore` 是对外唯一出入口，替换不影响界面。
 - **加新设备类型**：在 `model/DeviceKind.kt` 的 `DEVICE_KINDS` 加一行、在 `kindIconRes()` 补一条分支，
   并把对应的 PNG 放进 `res/drawable-nodpi/`（命名 `dev_<key>.png`），其余逻辑自动生效。
@@ -182,6 +203,8 @@ APK 内包含全部 41 张设备图标与 3 张功能图标，`AndroidManifest.x
 
 | 版本 | 内容 |
 | --- | --- |
+| v1.9.1 | 14 枚勋章由 emoji 换成专属 Q 版插画（描边与色板同那 41 张设备图）；达成由 Toast 改为全屏庆祝弹屏——勋章自下方升起转半圈、落位轻弹、背后一朵短小烟花，一次多枚可左右划看；总览卡右侧新增勋章胶囊；震动走 `performHapticFeedback`，仍未声明任何权限；与鸿蒙版 v1.9.1 同步 |
+| v1.9.0 | 一轮彻底排查的修复：导入不再"像 JSON 就收"（此前随便一份 JSON 选覆盖会清空整库）、覆盖与恢复前留底失败即中止、回收站与在册同 id 去重、勋章改为并入而非整体替换、脏值在 normalize 收敛、天数改用跨夏令时安全的"正午日序号"；回收站 / 勋章 / 自动备份三件套首次入库；补齐 edge-to-edge inset 与 onDestroy 的动画收口；新增 20 条 JVM 单元测试 |
 | v1.8.2 | 日期选择器的系统文字色改为按昼夜两套取值，深色模式下月份标题与日期数字用亮色，系统控件从此跟着应用的昼夜模式走 |
 | v1.8.1 | 输入框按各家 ROM 的规则加固：文本选择手柄在左 / 中 / 右三个位置显式指定为透明 Drawable，并关闭自动填充，在 HarmonyOS 兼容层等各家 ROM 上表现一致 |
 | v1.8.0 | 首次启动先确认《隐私条款》与《服务条款》：两份条款用系统浏览器打开，勾选同意后才能进入应用，不同意可直接退出，确认过一次后不再打扰 |
