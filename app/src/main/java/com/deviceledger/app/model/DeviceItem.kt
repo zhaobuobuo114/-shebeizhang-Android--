@@ -57,12 +57,13 @@ object DeviceCalc {
         val safeCreated = createdAt ?: 0L
         val safeName = name ?: ""
         val safePrice = price ?: 0.0
-        val safeBuyDate = if (buyDate.isNullOrEmpty()) DateUtil.today() else buyDate
         return DeviceItem(
             id = if (id.isNullOrEmpty()) "d" + safeCreated + (0..9999).random() else id,
             name = safeName,
-            price = if (safePrice.isNaN() || safePrice.isInfinite()) 0.0 else safePrice,
-            buyDate = if (DateUtil.isValid(safeBuyDate)) safeBuyDate else DateUtil.today(),
+            // 录入面板本来就禁止 0 与负数，负价只可能来自被改坏的文件；钳成 0 免得把扇形图算出负百分比
+            price = if (safePrice.isNaN() || safePrice.isInfinite() || safePrice <= 0.0) 0.0 else safePrice,
+            // 不补零的老写法（2026-1-5）修成标准串，而不是像以前那样整个丢掉当成今天
+            buyDate = DateUtil.sanitize(buyDate),
             category = resolveKind(category ?: ""),
             note = note ?: "",
             // 老版本数据没有 favorite 字段，缺省就是未收藏

@@ -5,12 +5,16 @@ import android.animation.AnimatorListenerAdapter
 import android.app.DatePickerDialog
 import android.app.Dialog
 import android.content.Context
+import android.content.Intent
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
+import android.net.Uri
 import android.os.Bundle
+import android.view.Gravity
 import android.view.View
+import android.widget.Toast
 import android.view.ViewGroup
 import android.view.ViewOutlineProvider
 import android.view.animation.Interpolator
@@ -19,9 +23,12 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.widget.NestedScrollView
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -31,19 +38,30 @@ import com.deviceledger.app.databinding.ActivityMainBinding
 import com.deviceledger.app.model.ChartData
 import com.deviceledger.app.model.DEVICE_KINDS
 import com.deviceledger.app.model.DeviceCalc
+import com.deviceledger.app.model.BadgeDef
+import com.deviceledger.app.model.Badges
 import com.deviceledger.app.model.DeviceItem
 import com.deviceledger.app.model.PieSlice
+import com.deviceledger.app.model.TrashItem
 import com.deviceledger.app.ui.AppTheme
+import com.deviceledger.app.ui.BadgeCelebration
+import com.deviceledger.app.ui.BadgeWall
 import com.deviceledger.app.ui.CardColors
+import com.deviceledger.app.ui.ConfirmSheet
 import com.deviceledger.app.ui.Curves
+import com.deviceledger.app.ui.DataSheet
 import com.deviceledger.app.ui.DeviceAdapter
 import com.deviceledger.app.ui.FieldCompat
 import com.deviceledger.app.ui.GradientBgDrawable
 import com.deviceledger.app.ui.KindTilesBinder
 import com.deviceledger.app.ui.MoveAnimator
 import com.deviceledger.app.ui.PrivacyGate
+import com.deviceledger.app.ui.SheetKit
 import com.deviceledger.app.ui.SortArrowView
+import com.deviceledger.app.ui.TrashSheet
+import com.deviceledger.app.ui.UndoBar
 import com.deviceledger.app.ui.WrapLayout
+import com.deviceledger.app.ui.borderedDrawable
 import com.deviceledger.app.ui.circleDrawable
 import com.deviceledger.app.ui.pressEffect
 import com.deviceledger.app.ui.chipTo
@@ -51,6 +69,7 @@ import com.deviceledger.app.ui.roundedDrawable
 import com.deviceledger.app.ui.roundedTopDrawable
 import com.deviceledger.app.ui.tintTo
 import com.deviceledger.app.ui.topPressEffect
+import com.deviceledger.app.util.BackupStore
 import com.deviceledger.app.util.DateUtil
 import com.deviceledger.app.util.DeviceStore
 import com.deviceledger.app.util.Fmt
@@ -99,9 +118,38 @@ class MainActivity : AppCompatActivity() {
     private var numberAnimator: android.animation.ValueAnimator? = null
     private var themeAnimator: android.animation.ValueAnimator? = null
     private var breathAnimator: android.animation.ValueAnimator? = null
+    /** 滚动监听要留引用，否则销毁时摘不掉，页面上任何滚动都会一直驱动胶囊重算 */
+    private var scrollListener: android.view.ViewTreeObserver.OnScrollChangedListener? = null
     private var lastSlices: List<PieSlice> = emptyList()
     /** 首次启动的条款确认框：持有它是为了退出界面时能收掉，不留悬空窗口 */
     private var privacyDialog: Dialog? = null
+    /** 日期选择器也要留引用：不跟踪的话 Activity 销毁时它还挂着，logcat 直接报 WindowLeaked */
+    private var datePickerDialog: DatePickerDialog? = null
+
+    /** 回收站：删掉的设备先落到这里，30 天内随时原样恢复 */
+    private val trash = mutableListOf<TrashItem>()
+    /** 已点亮的勋章：id -> 获得时间戳 */
+    private val badgeState = mutableMapOf<String, Long>()
+    /** 刚删掉的那一条，撤销条按它把设备放回去 */
+    private var lastDeletedId: String? = null
+    private var undoBar: UndoBar? = null
+    /** 勋章达成弹屏：根布局上的一层覆盖，取代原来的那条 Toast */
+    private lateinit var celebration: BadgeCelebration
+    /**
+     * 同一时刻只该有一个居中面板。赋新值时把上一个 dismiss 掉：
+     * 六个入口都往这一个字段上覆盖赋值，旧面板既关不掉、引用又丢，
+     * Activity 销毁时没人 dismiss 就会报 WindowLeaked，
+     * 还会叠出"两层回收站、要关两次"的怪状态。
+     */
+    private var hubDialog: Dialog? = null
+        set(value) {
+            if (field !== value) field?.dismiss()
+            field = value
+        }
+
+    /** 导出 / 导入走系统文件选择器，不需要任何存储权限 */
+    private lateinit var exportLauncher: androidx.activity.result.ActivityResultLauncher<String>
+    private lateinit var importLauncher: androidx.activity.result.ActivityResultLauncher<Array<String>>
 
     private val density: Float
         get() = resources.displayMetrics.density
@@ -119,6 +167,19 @@ class MainActivity : AppCompatActivity() {
 
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        // targetSdk 37 在 Android 15+ 是强制 edge-to-edge：不让出系统栏，标题就顶进状态栏与挖孔，
+        // 撤销条、回顶钮、面板底部按钮会落进导航手势区（底部上滑先被系统吃掉）。
+        // 根节点吃 inset、页面底色也在根节点上，所以顶部仍然是一条完整的渐变，不留白带。
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val bars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            // 键盘弹起时把编辑面板顶起来，否则"保存/取消"会被键盘盖住
+            val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+            v.setPadding(bars.left, bars.top, bars.right, maxOf(bars.bottom, imeBottom))
+            insets
+        }
+        binding.root.requestApplyInsets()
         // 上下两个三角各画一个方向：上面尖朝上、下面尖朝下。这一对形状就是"方向指示"的本体，
         // 整组翻半圈时它们连着形状一起转过去，翻完之后仍是"上尖朝上、下尖朝下"的样子。
         binding.arrowSortDown.dir = SortArrowView.Dir.DOWN
@@ -137,23 +198,32 @@ class MainActivity : AppCompatActivity() {
         // 输入框加固：给选择手柄配透明占位 Drawable，并关掉自动填充。
         // 部分厂商 ROM（含 HarmonyOS 的安卓兼容层）在这两处会抛空指针导致闪退。
         FieldCompat.apply(binding.etName, binding.etPrice, binding.etNote)
+        setupDataHub()
+        celebration = BadgeCelebration(this, binding.badgeLayer)
 
         // 首次启动先把隐私条款与服务条款摆出来，勾选同意之后才把本机数据读进界面
         if (DeviceStore.loadAgreed()) {
-            loadDevices(animate = savedInstanceState == null)
+            loadLocalData(animate = savedInstanceState == null)
         } else {
-            privacyDialog = PrivacyGate.show(this, theme) { loadDevices(animate = true) }
+            privacyDialog = PrivacyGate.show(this, theme) { loadLocalData(animate = true) }
         }
         applyTheme(theme)
         renderDateText()
         setupBreath()
     }
 
-    /** 把本机存的设备读进内存并整屏刷新一次 */
-    private fun loadDevices(animate: Boolean) {
+    /** 把本机存的设备、回收站、勋章读进内存并整屏刷新一次 */
+    private fun loadLocalData(animate: Boolean) {
         devices.clear()
         devices.addAll(DeviceStore.load())
+        trash.clear()
+        trash.addAll(DeviceStore.loadTrash(BackupStore.KEEP_DAYS))
+        badgeState.clear()
+        badgeState.putAll(DeviceStore.loadBadges())
         refreshAll(animateNumbers = animate)
+        updateBadgeEntry()
+        // 首次进入只是把已有状态读回来，不该为此弹"获得新勋章"
+        checkBadges(announce = false)
     }
 
     override fun onResume() {
@@ -174,9 +244,22 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         privacyDialog?.dismiss()
+        hubDialog?.dismiss()
+        datePickerDialog?.dismiss()
+        datePickerDialog = null
+        celebration.dismiss()
+        // 每一路动画都要收：只 cancel 三个的话，换肤/图表/回顶/起飞那几路
+        // 会在 Activity 销毁后继续逐帧写已经脱离窗口的 view
         numberAnimator?.cancel()
         themeAnimator?.cancel()
         breathAnimator?.cancel()
+        kindGridAnim?.cancel()
+        chartAnim?.cancel()
+        scrollAnim?.cancel()
+        launchAnim?.cancel()
+        scrollListener?.let { binding.sortScroller.viewTreeObserver.removeOnScrollChangedListener(it) }
+        scrollListener = null
+        undoBar?.dispose()
         super.onDestroy()
     }
 
@@ -472,7 +555,9 @@ class MainActivity : AppCompatActivity() {
      */
     private fun setupChipFx() {
         val scroller = binding.sortScroller
-        scroller.viewTreeObserver.addOnScrollChangedListener { refreshChipFx() }
+        val listener = android.view.ViewTreeObserver.OnScrollChangedListener { refreshChipFx() }
+        scrollListener = listener
+        scroller.viewTreeObserver.addOnScrollChangedListener(listener)
         // 布局一落定就得算一次：光靠 post 往往赶在测量之前，
         // 那时行宽还是 0，会被当成"装得下"而整行都不转；
         // 而这一行只要没被拖动就不会再有滚动回调来补救
@@ -550,9 +635,10 @@ class MainActivity : AppCompatActivity() {
                 if (pos != RecyclerView.NO_POSITION) {
                     pendingDeleteId = adapter.itemAt(pos).id
                     showConfirm(true)
+                    // 立即把卡片复位；是否真的删除由确认框决定。
+                    // pos 无效时绝不能 notifyItemChanged(-1)，那是把非法位置喂给 AdapterHelper
+                    adapter.notifyItemChanged(pos)
                 }
-                // 立即把卡片复位；是否真的删除由确认框决定
-                adapter.notifyItemChanged(pos)
             }
 
             override fun onChildDraw(
@@ -731,6 +817,8 @@ class MainActivity : AppCompatActivity() {
         devices[idx] = devices[idx].copy(favorite = fav)
         DeviceStore.save(devices)
         updateFavChip()
+        // 收藏数变了可能够到新勋章（心头好 / 宠爱有加）
+        checkBadges(announce = true)
         // 开着"只看收藏"时取消收藏，这条要从列表里消失，得整表刷新一次
         if (favOnly && !fav) {
             refreshAll(animateNumbers = false)
@@ -1036,6 +1124,9 @@ class MainActivity : AppCompatActivity() {
         val empty = shown.isEmpty()
         binding.recycler.visibility = if (empty) View.GONE else View.VISIBLE
         binding.emptyState.visibility = if (empty) View.VISIBLE else View.GONE
+        // 呼吸动画跟着空态一起开关：以前它在 onCreate 起一次就永远不停，
+        // 有数据、甚至界面不可见时仍在以 60fps 重绘一个 GONE 的图标
+        if (empty) setupBreath() else stopBreath()
         // 排序栏按"全部设备"判显隐：只看收藏筛空了也得留着，不然切不回来
         binding.sortBar.visibility = if (devices.isEmpty()) View.GONE else View.VISIBLE
         renderEmptyState()
@@ -1277,8 +1368,15 @@ class MainActivity : AppCompatActivity() {
 
     /* ------------------------------ 编辑面板 ------------------------------ */
 
-    private fun openEditor(item: DeviceItem?) {
+    /** 按 id 回查在册列表里最新的那份 */
+    private fun findLive(id: String): DeviceItem? = devices.firstOrNull { it.id == id }
+
+    private fun openEditor(src: DeviceItem?) {
         binding.tvError.visibility = View.GONE
+        // 传进来的可能是刚才点过星标之前的旧对象：onStarTapped 只换 devices 里的元素、
+        // 不向适配器重新提交列表，卡片点击回调给出的还是收藏前那份。
+        // 一律按 id 回查在册的最新一份，否则面板回显旧收藏状态、一保存就把刚点的收藏抹掉。
+        val item = src?.let { findLive(it.id) ?: it }
         if (item == null) {
             editingId = null
             binding.tvEditorTitle.text = "添加设备"
@@ -1360,6 +1458,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun pickDate() {
+        datePickerDialog?.dismiss()
         val dialog = DatePickerDialog(
             this,
             { _, year, month, day ->
@@ -1370,6 +1469,10 @@ class MainActivity : AppCompatActivity() {
             editDate.get(Calendar.MONTH),
             editDate.get(Calendar.DAY_OF_MONTH)
         )
+        datePickerDialog = dialog
+        dialog.setOnDismissListener {
+            if (datePickerDialog === dialog) datePickerDialog = null
+        }
         dialog.datePicker.maxDate = System.currentTimeMillis()
         dialog.show()
     }
@@ -1397,6 +1500,10 @@ class MainActivity : AppCompatActivity() {
         }
         val safePrice = price ?: return
         val note = binding.etNote.text.toString().trim()
+
+        // 增删设备之前留一份快照。用带 60 秒节流的 maybeBackup 而不是 forceBackup：
+        // 连着改 5 台就把 5 个槽位全刷成同一分钟，等于没有回退空间（鸿蒙端一直是这么做的）
+        BackupStore.maybeBackup(this, currentSnapshot())
 
         val id = editingId
         if (id == null) {
@@ -1429,6 +1536,8 @@ class MainActivity : AppCompatActivity() {
         DeviceStore.save(devices)
         refreshAll(animateNumbers = true)
         showEditor(false)
+        // 新记一台设备就可能够到新勋章，这里立刻判一次并报出来
+        checkBadges(announce = true)
     }
 
     /**
@@ -1472,14 +1581,304 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * 删除：设备不直接消失，而是整体挪进回收站，同时给 5 秒撤销。
+     * 就算没点撤销，它也还在回收站里躺 30 天，随时能原样取回。
+     */
     private fun confirmDelete() {
         val id = pendingDeleteId ?: return
-        devices.removeAll { it.id == id }
+        val idx = devices.indexOfFirst { it.id == id }
+        if (idx < 0) {
+            showConfirm(false, closeMs = 200L)
+            return
+        }
+        // 动数据之前先留一份快照，真想回退还有得退（同样走 60 秒节流）
+        BackupStore.maybeBackup(this, currentSnapshot())
+
+        val item = devices.removeAt(idx)
+        trash.add(0, TrashItem(item, System.currentTimeMillis()))
         DeviceStore.save(devices)
+        DeviceStore.saveTrash(trash)
+        lastDeletedId = id
+
         // 鸿蒙版 confirmDelete 里关弹窗用的是 animateTo 200ms EaseIn
         showConfirm(false, closeMs = 200L)
         // 列表的增删不在 animateTo 里（鸿蒙是先改 deviceList 再 animateTo），所以硬切
         refreshAll(animateNumbers = true)
+        updateBadgeEntry()
+        undoBar?.show("已删除「" + nameOf(item) + "」，进了回收站") { undoDelete() }
+    }
+
+    private fun undoDelete() {
+        val id = lastDeletedId ?: return
+        lastDeletedId = null
+        restoreFromTrash(id)
+    }
+
+    /* ------------------------------ 数据与备份 ------------------------------ */
+
+    private fun setupDataHub() {
+        undoBar = UndoBar(binding.undoBar, binding.tvUndoText, binding.btnUndo)
+        // 导出 / 导入都交给系统文件选择器，应用自己不申请任何存储权限
+        exportLauncher = registerForActivityResult(
+            ActivityResultContracts.CreateDocument("application/json")
+        ) { uri ->
+            if (uri != null) writeSnapshotTo(uri)
+        }
+        importLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) readSnapshotFrom(uri)
+        }
+        press(binding.btnHub) { openDataSheet() }
+        press(binding.btnBadgeEntry) { openBadgeWall() }
+    }
+
+    private fun currentSnapshot(): BackupStore.Snapshot =
+        BackupStore.Snapshot(devices.toMutableList(), trash.toMutableList(), badgeState.toMutableMap())
+
+    /** 把一份数据整体落在本机：设备、回收站、勋章一起写，再整屏刷新 */
+    private fun applySnapshot(s: BackupStore.Snapshot) {
+        devices.clear()
+        devices.addAll(s.devices)
+        trash.clear()
+        // 同一台设备不能既在册又在回收站，否则恢复一次就多出一台重复项
+        trash.addAll(s.recycle.filterNot { t -> devices.any { it.id == t.item.id } })
+        // 勋章只增不减：整体替换会让那次快照之后点亮的勋章凭空消失，
+        // 重新判定虽然能再点亮，达成日期却被改写成今天，原始时间就丢了。
+        // 所以这里是并入而非覆盖，同一枚取更早的达成时间。
+        for ((id, at) in s.badges) {
+            val has = badgeState[id]
+            if (has == null || at < has) badgeState[id] = at
+        }
+        DeviceStore.save(devices)
+        DeviceStore.saveTrash(trash)
+        DeviceStore.saveBadges(badgeState)
+        refreshAll(animateNumbers = true)
+        updateBadgeEntry()
+        checkBadges(announce = false)
+    }
+
+    private fun openDataSheet() {
+        hubDialog = DataSheet.show(
+            this, theme,
+            {
+                DataSheet.DataInfo(
+                    devices.size, trash.size, badgeState.size, BackupStore.listBackups(this)
+                )
+            },
+            DataSheet.DataActions(
+                onExportFile = { exportLauncher.launch(BackupStore.fileName()) },
+                onShare = { shareSnapshot() },
+                onImportPick = { importLauncher.launch(arrayOf("application/json", "text/plain")) },
+                onRestoreBackup = { slot -> askRestoreBackup(slot) },
+                onOpenTrash = { openTrashSheet() },
+                onOpenBadges = { openBadgeWall() }
+            )
+        )
+    }
+
+    private fun openBadgeWall() {
+        hubDialog = BadgeWall.show(this, theme) { badgeState }
+    }
+
+    private fun openTrashSheet() {
+        hubDialog = TrashSheet.show(
+            this, theme,
+            { trash.toList() },
+            TrashSheet.TrashActions(
+                onRestore = { id -> restoreFromTrash(id) },
+                onDeleteForever = { id -> deleteForever(id) },
+                onClear = { askClearTrash() }
+            )
+        )
+    }
+
+    /** 把当前数据写进用户挑好的位置 */
+    private fun writeSnapshotTo(uri: Uri) {
+        val text = BackupStore.buildJson(currentSnapshot())
+        val ok = try {
+            contentResolver.openOutputStream(uri)?.use {
+                it.write(text.toByteArray(Charsets.UTF_8))
+            }
+            true
+        } catch (e: Exception) {
+            false
+        }
+        Toast.makeText(
+            this,
+            if (ok) "已导出 " + devices.size + " 台设备" else "导出失败，换一个位置再试",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun readSnapshotFrom(uri: Uri) {
+        val text = try {
+            contentResolver.openInputStream(uri)?.use { it.readBytes() }?.toString(Charsets.UTF_8)
+        } catch (e: Exception) {
+            null
+        }
+        val snap = text?.let { BackupStore.parseJson(it) }
+        if (snap == null) {
+            Toast.makeText(this, "这个文件里读不出设备账的数据", Toast.LENGTH_SHORT).show()
+            return
+        }
+        askImport(snap)
+    }
+
+    /** 导入前先问清楚怎么并：合并是追加不重复的，覆盖是整体替换 */
+    private fun askImport(snap: BackupStore.Snapshot) {
+        val ctx = this
+        hubDialog = SheetKit.show(this, theme, "导入数据") { body, dismiss ->
+            val msg = SheetKit.note(
+                ctx, theme,
+                "这份文件里有 " + snap.devices.size + " 台设备、" + snap.recycle.size +
+                    " 条回收站记录、" + snap.badges.size + " 枚勋章。要怎么并进来？"
+            )
+            msg.setTextColor(theme.text2)
+            body.addView(msg)
+
+            val cancel = SheetKit.button(ctx, theme, "取消", false) { dismiss() }
+            val overwrite = SheetKit.button(ctx, theme, "覆盖", false) {
+                dismiss()
+                // 覆盖不可逆：留底没写成就必须停下来，不能让用户以为"当前数据已经存好了"
+                if (!BackupStore.forceBackup(this, currentSnapshot())) {
+                    Toast.makeText(this, "没能写好回退快照，已取消覆盖", Toast.LENGTH_LONG).show()
+                    return@button
+                }
+                applySnapshot(snap)
+                Toast.makeText(this, "已换成文件里的数据", Toast.LENGTH_SHORT).show()
+            }
+            val merge = SheetKit.button(ctx, theme, "合并", true) {
+                dismiss()
+                if (!BackupStore.forceBackup(this, currentSnapshot())) {
+                    Toast.makeText(this, "没能写好回退快照，已取消导入", Toast.LENGTH_LONG).show()
+                    return@button
+                }
+                val before = devices.size
+                applySnapshot(BackupStore.merge(currentSnapshot(), snap))
+                // 报"新增了几台"，而不是文件里的台数——后者会把没并进来的重复项也算成已导入
+                val added = devices.size - before
+                Toast.makeText(
+                    this,
+                    if (added > 0) "导入完成，新增 $added 台设备" else "没有新设备需要并入",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            val row = SheetKit.buttonRow(ctx, cancel, overwrite, merge)
+            row.gravity = Gravity.END
+            body.addView(row)
+        }
+    }
+
+    /** 走系统分享把数据文件交给别的应用，同样不需要存储权限 */
+    private fun shareSnapshot() {
+        val file = BackupStore.writeExportFile(this, currentSnapshot())
+        val uri = if (file != null) {
+            try {
+                FileProvider.getUriForFile(this, applicationContext.packageName + ".fileprovider", file)
+            } catch (e: Exception) {
+                null
+            }
+        } else {
+            null
+        }
+        if (uri == null) {
+            Toast.makeText(this, "没能准备好要分享的文件", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "application/json"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        try {
+            startActivity(Intent.createChooser(intent, "导出设备账数据"))
+        } catch (e: Exception) {
+            Toast.makeText(this, "这台机器上没有可接收文件的应用", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun askRestoreBackup(slot: Int) {
+        val snap = BackupStore.readBackup(this, slot)
+        if (snap == null) {
+            Toast.makeText(this, "这份快照读不出来了", Toast.LENGTH_SHORT).show()
+            return
+        }
+        hubDialog = ConfirmSheet.show(
+            this, theme, "恢复备份",
+            "把现在的 " + devices.size + " 台设备换回 " + snap.devices.size + " 台（" +
+                DateUtil.formatClock(snap.exportedAt) + " 那一份）。" +
+                "当前数据会先自动留一份快照，恢复之后还能再换回来。",
+            "确认恢复"
+        ) {
+            // 确认文案承诺了"当前数据会先自动留一份快照"，留底失败就不能真换
+            if (!BackupStore.forceBackup(this, currentSnapshot())) {
+                Toast.makeText(this, "没能写好回退快照，已取消恢复", Toast.LENGTH_LONG).show()
+                return@show
+            }
+            applySnapshot(snap)
+            Toast.makeText(this, "已恢复到这一份快照", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun askClearTrash() {
+        if (trash.isEmpty()) return
+        hubDialog = ConfirmSheet.show(
+            this, theme, "清空回收站",
+            "回收站里的 " + trash.size + " 条记录会被彻底删除，删掉之后找不回来。",
+            "清空"
+        ) {
+            hubDialog?.dismiss()
+            hubDialog = null
+            trash.clear()
+            DeviceStore.saveTrash(trash)
+            openTrashSheet()
+        }
+    }
+
+    /** 回收站里的恢复 / 彻底删除 */
+    private fun restoreFromTrash(id: String) {
+        val idx = trash.indexOfFirst { it.item.id == id }
+        if (idx < 0) return
+        // 同 id 已经在册（多半是跨端合并留下的）：再塞一次列表里就有两条同 id，
+        // 汇总双算、DiffUtil 键重复、下次合并静默丢一条。只把它从回收站清掉。
+        if (devices.any { it.id == id }) {
+            trash.removeAt(idx)
+            DeviceStore.saveTrash(trash)
+            refreshAll(animateNumbers = false)
+            Toast.makeText(this, "这台设备已经在列表里了", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val t = trash.removeAt(idx)
+        devices.add(t.item)
+        DeviceStore.save(devices)
+        DeviceStore.saveTrash(trash)
+        refreshAll(animateNumbers = true)
+        updateBadgeEntry()
+        checkBadges(announce = false)
+        Toast.makeText(this, "已恢复「" + nameOf(t.item) + "」", Toast.LENGTH_SHORT).show()
+    }
+
+    private fun deleteForever(id: String) {
+        trash.removeAll { it.item.id == id }
+        DeviceStore.saveTrash(trash)
+    }
+
+    private fun nameOf(item: DeviceItem): String = if (item.name.isEmpty()) "未命名" else item.name
+
+    /** 勋章只增不减：达成即点亮并记下时间，之后数字回落也不熄灭 */
+    private fun checkBadges(announce: Boolean) {
+        val fresh = Badges.evaluate(devices, badgeState)
+        if (fresh.isEmpty()) return
+        DeviceStore.saveBadges(badgeState)
+        updateBadgeEntry()
+        if (announce) {
+            // 达成反馈只走弹屏这一条路径，不再叠一条系统 Toast
+            celebration.show(theme, fresh.map { it to (badgeState[it.id] ?: 0L) })
+        }
+    }
+
+    private fun updateBadgeEntry() {
+        binding.tvBadgeEntryCount.text = badgeState.size.toString() + " / " + Badges.ALL.size
     }
 
     /* ------------------------------ 主题 ------------------------------ */
@@ -1525,8 +1924,9 @@ class MainActivity : AppCompatActivity() {
         val b = binding
         val d = density
 
-        // 页面底色：顶部渐变
-        b.contentMain.background =
+        // 页面底色：顶部渐变。挂在根节点而不是内容层，
+        // 这样根节点为系统栏留出的 padding 区域也是同一条渐变，不会露出底色带
+        b.root.background =
             GradientBgDrawable(intArrayOf(t.bgTop, t.bg, t.bg), floatArrayOf(0f, 0.28f, 1f), false)
 
         // 顶栏
@@ -1534,6 +1934,10 @@ class MainActivity : AppCompatActivity() {
         b.tvSlogan.setTextColor(t.sub)
         b.btnTheme.background = roundedDrawable(t.card, 19f, d)
         ViewCompat.setElevation(b.btnTheme, 4f * d)
+        // 数据与备份的入口：与主题按钮同款圆形底板，图标跟着文字色走
+        b.btnHub.background = roundedDrawable(t.card, 19f, d)
+        ViewCompat.setElevation(b.btnHub, 4f * d)
+        b.ivHubIcon.setColorFilter(t.text)
         b.btnAdd.background = roundedDrawable(t.primary, 19f, d)
         // 鸿蒙版 Button 的字色写死 Color.White，深色模式下也是白字，这里保持一致
         b.btnAdd.setTextColor(CardColors.whiteText)
@@ -1619,6 +2023,14 @@ class MainActivity : AppCompatActivity() {
         b.btnSave.background = roundedDrawable(t.primary, 12f, d)
         b.btnSave.setTextColor(CardColors.whiteText)
 
+        // 勋章入口：总览卡上的半透明胶囊，配色与"0 台在册"同源（两者都压在主色渐变上）
+        b.btnBadgeEntry.background = roundedDrawable(CardColors.badgeBg, 10f, d)
+        b.tvBadgeEntryCount.setTextColor(CardColors.whiteText)
+        b.tvBadgeEntryMore.setTextColor(CardColors.softText)
+
+        // 撤销条
+        undoBar?.applyTheme(t)
+
         // 删除确认
         b.confirmLayer.setBackgroundColor(t.scrim)
         b.confirmCard.background = roundedDrawable(t.card, 18f, d)
@@ -1684,5 +2096,11 @@ class MainActivity : AppCompatActivity() {
         va.addUpdateListener { binding.ivEmpty.translationY = it.animatedValue as Float }
         va.start()
         breathAnimator = va
+    }
+
+    /** 列表非空时空态图标根本不显示，没必要留着一条无限循环的动画 */
+    private fun stopBreath() {
+        breathAnimator?.cancel()
+        breathAnimator = null
     }
 }

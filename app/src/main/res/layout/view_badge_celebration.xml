@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  勋章达成弹屏：整块作为根 FrameLayout 的一层覆盖，与编辑面板、删除确认同一套路。
+  刻意不用 Dialog —— 省掉一套窗口生命周期，返回键也走应用里已有的那套拦截。
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/badgeLayer"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clickable="true"
+    android:focusable="true"
+    android:visibility="gone">
+
+    <!-- 遮罩底色由代码按当前主题铺，点这一层任意处关闭 -->
+    <View
+        android:id="@+id/badgeScrim"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- 烟花画在勋章背后，只开场放一朵 -->
+    <com.deviceledger.app.ui.SparkleView
+        android:id="@+id/badgeSparkle"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:orientation="vertical">
+
+        <androidx.viewpager2.widget.ViewPager2
+            android:id="@+id/badgePager"
+            android:layout_width="match_parent"
+            android:layout_height="252dp" />
+
+        <!-- 多枚时显示「2 / 3」，只有一枚时整块隐藏 -->
+        <TextView
+            android:id="@+id/badgePageLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:paddingStart="0dp"
+            android:paddingEnd="30dp"
+            android:textSize="11sp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/badgeHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="30dp"
+            android:alpha="0"
+            android:gravity="center"
+            android:text="轻点空白处关闭"
+            android:textSize="11sp" />
+    </LinearLayout>
+</FrameLayout>

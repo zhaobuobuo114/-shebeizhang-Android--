@@ -37,15 +37,14 @@ object DateUtil {
         return epochDay(c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH))
     }
 
-    /** yyyy-MM-dd 拆成 [年, 月, 日]，非法返回 null */
+    /** yyyy-MM-dd 拆成 [年, 月, 日]，非法返回 null（月日允许不补零，兼容老数据写法） */
     fun parts(dateStr: String): IntArray? {
-        if (dateStr.length != 10) return null
         val p = dateStr.split("-")
         if (p.size != 3) return null
         val y = p[0].toIntOrNull() ?: return null
         val m = p[1].toIntOrNull() ?: return null
         val d = p[2].toIntOrNull() ?: return null
-        if (m < 1 || m > 12 || d < 1 || d > 31) return null
+        if (y < 1900 || m < 1 || m > 12 || d < 1 || d > 31) return null
         return intArrayOf(y, m, d)
     }
 
@@ -56,16 +55,21 @@ object DateUtil {
         return if (diff > 0) diff else 0
     }
 
-    /** 简易合法性校验（同时能挡住 2025-02-30 这类非法日期） */
-    fun isValid(dateStr: String): Boolean {
-        val p = parts(dateStr) ?: return false
+    /**
+     * 把任意写法的日期修成标准串：'2026-1-5' 补零成 '2026-01-05'，
+     * '2025-02-30' 这类不存在的一天、以及彻底读不懂的串一律修成今天。
+     * 导入外部文件与读历史数据都走这里，保证落进列表的日期一定是规范串。
+     * 与鸿蒙版 DateUtil.sanitize 同一套规则。
+     */
+    fun sanitize(dateStr: String?): String {
+        val p = dateStr?.let { parts(it) } ?: return today()
         val c = Calendar.getInstance()
         c.set(p[0], p[1] - 1, p[2], 12, 0, 0)
         c.set(Calendar.MILLISECOND, 0)
-        return c.get(Calendar.YEAR) == p[0] &&
+        return if (c.get(Calendar.YEAR) == p[0] &&
             c.get(Calendar.MONTH) + 1 == p[1] &&
-            c.get(Calendar.DAY_OF_MONTH) == p[2] &&
-            format(p[0], p[1], p[2]) == dateStr
+            c.get(Calendar.DAY_OF_MONTH) == p[2]
+        ) format(p[0], p[1], p[2]) else today()
     }
 
     /** yyyy-MM-dd -> Calendar（当日） */
@@ -77,6 +81,32 @@ object DateUtil {
             c.set(Calendar.MILLISECOND, 0)
         }
         return c
+    }
+
+    /** 时间戳 -> 点分日期，如 2026.10.10（勋章获得日期用） */
+    fun formatStamp(at: Long): String {
+        if (at <= 0L) return ""
+        val c = Calendar.getInstance()
+        c.timeInMillis = at
+        return c.get(Calendar.YEAR).toString() + "." +
+            pad(c.get(Calendar.MONTH) + 1) + "." +
+            pad(c.get(Calendar.DAY_OF_MONTH))
+    }
+
+    /** 时间戳 -> 便于排序与比对的时间串，如 10-09 14:30（备份列表用） */
+    fun formatClock(at: Long): String {
+        if (at <= 0L) return "--"
+        val c = Calendar.getInstance()
+        c.timeInMillis = at
+        val now = Calendar.getInstance()
+        val sameYear = c.get(Calendar.YEAR) == now.get(Calendar.YEAR)
+        val dayPart = if (sameYear) {
+            pad(c.get(Calendar.MONTH) + 1) + "-" + pad(c.get(Calendar.DAY_OF_MONTH))
+        } else {
+            c.get(Calendar.YEAR).toString() + "-" + pad(c.get(Calendar.MONTH) + 1) + "-" +
+                pad(c.get(Calendar.DAY_OF_MONTH))
+        }
+        return dayPart + " " + pad(c.get(Calendar.HOUR_OF_DAY)) + ":" + pad(c.get(Calendar.MINUTE))
     }
 
     /** 把天数说成人话：如 "3 年 2 个月" */

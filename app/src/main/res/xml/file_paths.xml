@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 只把导出用的那一个私有子目录放出去给 FileProvider，其余私有文件不外泄 -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <files-path
+        name="export"
+        path="export/" />
+</paths>

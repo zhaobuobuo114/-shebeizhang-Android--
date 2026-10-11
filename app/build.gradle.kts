@@ -29,8 +29,8 @@ android {
         applicationId = "com.deviceledger.app"
         minSdk = 24
         targetSdk = 37
-        versionCode = 14
-        versionName = "1.8.2"
+        versionCode = 16
+        versionName = "1.9.1"
     }
 
     signingConfigs {
@@ -103,5 +103,14 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.recyclerview:recyclerview:1.3.2")
+    // 勋章弹屏的多枚翻页。它原本只是 material 的传递依赖，这里显式声明，
+    // 免得哪天 material 升级不再带它就编不过
+    implementation("androidx.viewpager2:viewpager2:1.1.0")
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+
+    // 纯逻辑（日期、脏数据清洗、图表聚合）走 JVM 单元测试，不需要真机。
+    // java.time 只允许出现在测试里——它要 API 26，而本工程 minSdk 24。
+    testImplementation("junit:junit:4.13.2")
+    // android.jar 里的 org.json 是"方法未实现"的桩，测 BackupStore 得换成真实现
+    testImplementation("org.json:json:20240303")
 }

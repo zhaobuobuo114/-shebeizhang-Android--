@@ -60,6 +60,22 @@
                             android:textSize="12sp" />
                     </LinearLayout>
 
+                    <!-- 数据与备份、回收站、勋章墙的入口 -->
+                    <FrameLayout
+                        android:id="@+id/btnHub"
+                        android:layout_width="38dp"
+                        android:layout_height="38dp"
+                        android:layout_marginRight="8dp">
+
+                        <ImageView
+                            android:id="@+id/ivHubIcon"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="数据与备份"
+                            android:src="@drawable/ic_more" />
+                    </FrameLayout>
+
                     <FrameLayout
                         android:id="@+id/btnTheme"
                         android:layout_width="38dp"
@@ -220,6 +236,51 @@
                                 android:layout_height="wrap_content"
                                 android:textSize="12sp" />
                         </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- 里程碑勋章入口：总览卡右侧那块空档，点开是勋章墙。
+                         挂在 FrameLayout 上而不是塞进竖向内容里，才不会把大金额挤窄 -->
+                    <LinearLayout
+                        android:id="@+id/btnBadgeEntry"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="end|top"
+                        android:layout_marginTop="58dp"
+                        android:layout_marginEnd="18dp"
+                        android:contentDescription="里程碑勋章"
+                        android:focusable="true"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingLeft="9dp"
+                        android:paddingTop="4dp"
+                        android:paddingRight="7dp"
+                        android:paddingBottom="4dp">
+
+                        <!-- 通用奖牌图：不随解锁情况变化，只当"勋章"这件事的门面 -->
+                        <ImageView
+                            android:id="@+id/ivBadgeEntryIcon"
+                            android:layout_width="16dp"
+                            android:layout_height="16dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/badge_medal" />
+
+                        <TextView
+                            android:id="@+id/tvBadgeEntryCount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="5dp"
+                            android:includeFontPadding="false"
+                            android:text="0 / 14"
+                            android:textSize="11sp" />
+
+                        <TextView
+                            android:id="@+id/tvBadgeEntryMore"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="2dp"
+                            android:includeFontPadding="false"
+                            android:text="›"
+                            android:textSize="13sp" />
                     </LinearLayout>
                 </FrameLayout>
 
@@ -641,6 +702,45 @@
             android:src="@drawable/ic_top" />
     </FrameLayout>
 
+    <!-- ==================== 删除后的撤销条 ==================== -->
+    <!-- 删掉的设备先进回收站，这里给 5 秒的反悔时间，点了「撤销」就原样放回 -->
+    <LinearLayout
+        android:id="@+id/undoBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginBottom="24dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="14dp"
+        android:paddingRight="6dp"
+        android:paddingTop="10dp"
+        android:paddingBottom="10dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvUndoText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/btnUndo"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:gravity="center"
+            android:paddingLeft="14dp"
+            android:paddingRight="14dp"
+            android:text="撤销"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
     <!-- ==================== 编辑面板 ==================== -->
     <FrameLayout
         android:id="@+id/editorLayer"
@@ -989,5 +1089,10 @@
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>
+
+    <!-- 勋章达成弹屏：挂在最后，压在编辑面板与确认框之上 -->
+    <include
+        android:id="@+id/badgeLayer"
+        layout="@layout/view_badge_celebration" />
 
 </FrameLayout>
