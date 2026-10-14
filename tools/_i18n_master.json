@@ -1,0 +1,1712 @@
+{
+  "_doc": "设备账 v2.0.0 多语言主表：唯一真源。_i18n_gen.py 由它生成安卓 values-*/strings.xml 与鸿蒙 {base,zh_CN,zh_TW,ja_JP,en_US}/element/string.json。占位符统一写 {0} {1}（顺序即语义顺序），类型在 ph 数组里声明（s=字符串 d=整数 f=小数）。plurals 表单独放最后。",
+  "_langs": [
+    "zh-CN",
+    "zh-TW",
+    "ja",
+    "en"
+  ],
+  "strings": {
+    "app_name": {
+      "zh-CN": "设备账",
+      "zh-TW": "裝置帳",
+      "ja": "デバイス台帳",
+      "en": "Device Ledger"
+    },
+    "top_slogan": {
+      "zh-CN": "买了多久 · 花了多少 · 每天多少钱",
+      "zh-TW": "買了多久 · 花了多少 · 每天多少錢",
+      "ja": "いつ買った · いくら掛けた · 1日いくらか",
+      "en": "How long owned · What it cost · What it costs a day"
+    },
+    "top_add": {
+      "zh-CN": "＋ 记一笔",
+      "zh-TW": "＋ 記一筆",
+      "ja": "＋ 記録する",
+      "en": "＋ Add"
+    },
+    "cd_hub": {
+      "zh-CN": "数据与备份",
+      "zh-TW": "資料與備份",
+      "ja": "データとバックアップ",
+      "en": "Data and backup"
+    },
+    "cd_theme": {
+      "zh-CN": "切换昼夜模式",
+      "zh-TW": "切換晝夜模式",
+      "ja": "ライト／ダークを切替",
+      "en": "Toggle light and dark mode"
+    },
+    "cd_badges": {
+      "zh-CN": "里程碑勋章",
+      "zh-TW": "里程碑勳章",
+      "ja": "マイルストーンバッジ",
+      "en": "Milestone badges"
+    },
+    "cd_empty": {
+      "zh-CN": "空状态",
+      "zh-TW": "空狀態",
+      "ja": "空の状態",
+      "en": "Empty state"
+    },
+    "cd_top": {
+      "zh-CN": "回到顶部",
+      "zh-TW": "回到頂端",
+      "ja": "トップへ戻る",
+      "en": "Back to top"
+    },
+    "cd_favorite_toggle": {
+      "zh-CN": "收藏开关",
+      "zh-TW": "收藏開關",
+      "ja": "お気に入り切替",
+      "en": "Favorite switch"
+    },
+    "cd_device_icon": {
+      "zh-CN": "设备图标",
+      "zh-TW": "裝置圖示",
+      "ja": "デバイスのアイコン",
+      "en": "Device icon"
+    },
+    "cd_kind_icon": {
+      "zh-CN": "类型图标",
+      "zh-TW": "類型圖示",
+      "ja": "種類のアイコン",
+      "en": "Category icon"
+    },
+    "cd_favorite": {
+      "zh-CN": "收藏",
+      "zh-TW": "收藏",
+      "ja": "お気に入り",
+      "en": "Favorite"
+    },
+    "sum_total_label": {
+      "zh-CN": "设备总投入",
+      "zh-TW": "裝置總投入",
+      "ja": "総投資額",
+      "en": "Total invested"
+    },
+    "sum_avg_label": {
+      "zh-CN": "日均合计",
+      "zh-TW": "日均合計",
+      "ja": "1日あたり合計",
+      "en": "Daily total"
+    },
+    "sum_best_label": {
+      "zh-CN": "最划算",
+      "zh-TW": "最划算",
+      "ja": "一番お得",
+      "en": "Best value"
+    },
+    "sum_avg_prefix": {
+      "ph": [
+        "s"
+      ],
+      "zh-CN": "日均 {0}",
+      "zh-TW": "日均 {0}",
+      "ja": "1日あたり {0}",
+      "en": "{0} a day"
+    },
+    "sum_badge_progress": {
+      "zh-CN": "{0} / {1}",
+      "ph": [
+        "d",
+        "d"
+      ],
+      "zh-TW": "{0} / {1}",
+      "ja": "{0} / {1}",
+      "en": "{0} / {1}"
+    },
+    "chart_title": {
+      "zh-CN": "支出构成",
+      "zh-TW": "支出構成",
+      "ja": "支出の内訳",
+      "en": "Where it went"
+    },
+    "chart_sub": {
+      "zh-CN": "按设备类型",
+      "zh-TW": "按裝置類型",
+      "ja": "デバイス種類別",
+      "en": "By device type"
+    },
+    "chart_by_amount": {
+      "zh-CN": "按金额",
+      "zh-TW": "按金額",
+      "ja": "金額別",
+      "en": "By amount"
+    },
+    "chart_by_count": {
+      "zh-CN": "按台数",
+      "zh-TW": "按台數",
+      "ja": "台数別",
+      "en": "By count"
+    },
+    "chart_collapse": {
+      "zh-CN": "收起",
+      "zh-TW": "收起",
+      "ja": "折り畳む",
+      "en": "Collapse"
+    },
+    "chart_expand": {
+      "zh-CN": "展开",
+      "zh-TW": "展開",
+      "ja": "広げる",
+      "en": "Expand"
+    },
+    "chart_empty_legend": {
+      "zh-CN": "还没有数据",
+      "zh-TW": "還沒有資料",
+      "ja": "データがありません",
+      "en": "No data yet"
+    },
+    "chart_center_amount": {
+      "zh-CN": "总投入",
+      "zh-TW": "總投入",
+      "ja": "総額",
+      "en": "Spent"
+    },
+    "sort_label": {
+      "zh-CN": "排序",
+      "zh-TW": "排序",
+      "ja": "並び順",
+      "en": "Sort"
+    },
+    "sort_fav": {
+      "zh-CN": "★ 收藏",
+      "zh-TW": "★ 收藏",
+      "ja": "★ お気に入り",
+      "en": "★ Favorites"
+    },
+    "sort_fav_count": {
+      "zh-CN": "★ 收藏 {0}",
+      "ph": [
+        "d"
+      ],
+      "zh-TW": "★ 收藏 {0}",
+      "ja": "★ お気に入り {0}",
+      "en": "★ Favorites {0}"
+    },
+    "sort_avg_desc": {
+      "zh-CN": "日均最高",
+      "zh-TW": "日均最高",
+      "ja": "1日あたり最高",
+      "en": "Highest daily"
+    },
+    "sort_avg_asc": {
+      "zh-CN": "日均最低",
+      "zh-TW": "日均最低",
+      "ja": "1日あたり最低",
+      "en": "Lowest daily"
+    },
+    "sort_price_desc": {
+      "zh-CN": "价格最高",
+      "zh-TW": "價格最高",
+      "ja": "価格が高い順",
+      "en": "Highest price"
+    },
+    "sort_price_asc": {
+      "zh-CN": "价格最低",
+      "zh-TW": "價格最低",
+      "ja": "価格が安い順",
+      "en": "Lowest price"
+    },
+    "sort_date_desc": {
+      "zh-CN": "最近购买",
+      "zh-TW": "最近購買",
+      "ja": "新しく購入した順",
+      "en": "Bought recently"
+    },
+    "sort_date_asc": {
+      "zh-CN": "最早购买",
+      "zh-TW": "最早購買",
+      "ja": "昔に購入した順",
+      "en": "Bought earliest"
+    },
+    "sort_days_desc": {
+      "zh-CN": "用最久",
+      "zh-TW": "用最久",
+      "ja": "最長く使用中",
+      "en": "Longest owned"
+    },
+    "sort_days_asc": {
+      "zh-CN": "用最短",
+      "zh-TW": "用最短",
+      "ja": "最短使用",
+      "en": "Newest arrival"
+    },
+    "empty_all_title": {
+      "zh-CN": "还没有设备记录",
+      "zh-TW": "還沒有裝置記錄",
+      "ja": "デバイスの記録がありません",
+      "en": "No devices yet"
+    },
+    "empty_all_desc1": {
+      "zh-CN": "记下第一台设备的购买日期和价格，",
+      "zh-TW": "记下第一台裝置的購買日期和價格，",
+      "ja": "最初に一台目の購入日と価格を記録すると、",
+      "en": "Record your first device's purchase date and price,"
+    },
+    "empty_all_desc2": {
+      "zh-CN": "它会告诉你这台设备每天花了多少钱。",
+      "zh-TW": "它會告訴你這台裝置每天花了多少錢。",
+      "ja": "そのデバイスが1日いくらかが分かります。",
+      "en": "and see what it costs you every day."
+    },
+    "empty_all_action": {
+      "zh-CN": "添加设备",
+      "zh-TW": "新增裝置",
+      "ja": "デバイスを追加",
+      "en": "Add a device"
+    },
+    "empty_fav_title": {
+      "zh-CN": "还没有收藏的设备",
+      "zh-TW": "還沒有收藏的裝置",
+      "ja": "お気に入りのデバイスがありません",
+      "en": "No favorites yet"
+    },
+    "empty_fav_desc1": {
+      "zh-CN": "点设备卡片右下角的星标，",
+      "zh-TW": "點裝置卡片右下角的星標，",
+      "ja": "カードの右下の星マークを押すと、",
+      "en": "Tap the star at the bottom-right of a card"
+    },
+    "empty_fav_desc2": {
+      "zh-CN": "把最爱的设备收进来。",
+      "zh-TW": "把最愛的裝置收進來。",
+      "ja": "一番好きなデバイスに入ります。",
+      "en": "to keep the ones you love here."
+    },
+    "empty_fav_action": {
+      "zh-CN": "看全部设备",
+      "zh-TW": "看全部裝置",
+      "ja": "すべて見る",
+      "en": "See all devices"
+    },
+    "sticky_avg": {
+      "ph": [
+        "s"
+      ],
+      "zh-CN": "日均 {0}",
+      "zh-TW": "日均 {0}",
+      "ja": "1日 {0}",
+      "en": "{0}/day"
+    },
+    "undo_button": {
+      "zh-CN": "撤销",
+      "zh-TW": "復原",
+      "ja": "元に戻す",
+      "en": "Undo"
+    },
+    "undo_deleted": {
+      "zh-CN": "已删除「{0}」，进了回收站",
+      "ph": [
+        "s"
+      ],
+      "zh-TW": "已刪除「{0}」，進了資源回收桶",
+      "ja": "「{0}」をゴミ箱に移動しました",
+      "en": "Moved “{0}” to Trash"
+    },
+    "editor_title_add": {
+      "zh-CN": "添加设备",
+      "zh-TW": "新增裝置",
+      "ja": "デバイスを追加",
+      "en": "Add device"
+    },
+    "editor_title_edit": {
+      "zh-CN": "编辑设备",
+      "zh-TW": "編輯裝置",
+      "ja": "デバイスを編集",
+      "en": "Edit device"
+    },
+    "editor_close": {
+      "zh-CN": "关闭",
+      "zh-TW": "關閉",
+      "ja": "閉じる",
+      "en": "Close"
+    },
+    "editor_name_label": {
+      "zh-CN": "设备名称",
+      "zh-TW": "裝置名稱",
+      "ja": "デバイス名",
+      "en": "Device name"
+    },
+    "editor_name_hint": {
+      "zh-CN": "例如：MacBook Pro 14",
+      "zh-TW": "例如：MacBook Pro 14",
+      "ja": "例：MacBook Pro 14",
+      "en": "e.g. MacBook Pro 14"
+    },
+    "editor_price_label": {
+      "zh-CN": "购买价格（{0}）",
+      "ph": [
+        "s"
+      ],
+      "zh-TW": "購買價格（{0}）",
+      "ja": "購入価格（{0}）",
+      "en": "Price ({0})"
+    },
+    "editor_price_hint": {
+      "zh-CN": "0.00",
+      "zh-TW": "0.00",
+      "ja": "0.00",
+      "en": "0.00"
+    },
+    "editor_kind_label": {
+      "zh-CN": "设备类型",
+      "zh-TW": "裝置類型",
+      "ja": "デバイス種類",
+      "en": "Category"
+    },
+    "editor_kind_expand": {
+      "zh-CN": "展开全部 {0} 类",
+      "ph": [
+        "d"
+      ],
+      "zh-TW": "展開全部 {0} 類",
+      "ja": "全 {0} 種類を表示",
+      "en": "Show all {0} categories"
+    },
+    "editor_kind_collapse": {
+      "zh-CN": "收起",
+      "zh-TW": "收起",
+      "ja": "折り畳む",
+      "en": "Collapse"
+    },
+    "editor_date_label": {
+      "zh-CN": "购买日期",
+      "zh-TW": "購買日期",
+      "ja": "購入日",
+      "en": "Purchase date"
+    },
+    "editor_note_label": {
+      "zh-CN": "备注（可选）",
+      "zh-TW": "備註（選填）",
+      "ja": "メモ（任意）",
+      "en": "Note (optional)"
+    },
+    "editor_note_hint": {
+      "zh-CN": "保修到什么时候、配件花了多少……",
+      "zh-TW": "保修到什麼時候、配件花了多少……",
+      "ja": "保証期限や付属品の費用など……",
+      "en": "Warranty end, add-ons, anything worth keeping"
+    },
+    "editor_fav_label": {
+      "zh-CN": "收藏为最爱",
+      "zh-TW": "收藏為最愛",
+      "ja": "お気に入りに追加",
+      "en": "Mark as favorite"
+    },
+    "editor_fav_on": {
+      "zh-CN": "已收藏",
+      "zh-TW": "已收藏",
+      "ja": "お気に入り済",
+      "en": "Favorited"
+    },
+    "editor_fav_off": {
+      "zh-CN": "未收藏",
+      "zh-TW": "未收藏",
+      "ja": "未登録",
+      "en": "Not favorited"
+    },
+    "editor_cancel": {
+      "zh-CN": "取消",
+      "zh-TW": "取消",
+      "ja": "キャンセル",
+      "en": "Cancel"
+    },
+    "editor_save": {
+      "zh-CN": "保存",
+      "zh-TW": "儲存",
+      "ja": "保存",
+      "en": "Save"
+    },
+    "err_name": {
+      "zh-CN": "请填写设备名称",
+      "zh-TW": "請填寫裝置名稱",
+      "ja": "デバイス名を入力してください",
+      "en": "Enter a device name"
+    },
+    "err_price_empty": {
+      "zh-CN": "请填写购买价格",
+      "zh-TW": "請填寫購買價格",
+      "ja": "購入価格を入力してください",
+      "en": "Enter the purchase price"
+    },
+    "err_price_invalid": {
+      "zh-CN": "请填写有效的购买价格",
+      "zh-TW": "請填寫有效的購買價格",
+      "ja": "有効な購入価格を入力してください",
+      "en": "Enter a valid price"
+    },
+    "err_date_future": {
+      "zh-CN": "购买日期不能晚于今天",
+      "zh-TW": "購買日期不能晚於今天",
+      "ja": "購入日に今日より後の日付は使えません",
+      "en": "The purchase date can’t be in the future"
+    },
+    "delete_title": {
+      "zh-CN": "确定删除这台设备？",
+      "zh-TW": "確定刪除此裝置？",
+      "ja": "このデバイスを削除しますか？",
+      "en": "Delete this device?"
+    },
+    "delete_cancel": {
+      "zh-CN": "取消",
+      "zh-TW": "取消",
+      "ja": "キャンセル",
+      "en": "Cancel"
+    },
+    "delete_confirm": {
+      "zh-CN": "删除",
+      "zh-TW": "刪除",
+      "ja": "削除",
+      "en": "Delete"
+    },
+    "swipe_delete": {
+      "zh-CN": "删除",
+      "zh-TW": "刪除",
+      "ja": "削除",
+      "en": "Delete"
+    },
+    "trash_title": {
+      "zh-CN": "回收站",
+      "zh-TW": "資源回收桶",
+      "ja": "ゴミ箱",
+      "en": "Trash"
+    },
+    "trash_hint": {
+      "zh-CN": "删除的设备会在这里留 {0} 天，期间可以原样恢复；超过之后会自动清掉。",
+      "ph": [
+        "d"
+      ],
+      "zh-TW": "刪除的裝置會在這裡留 {0} 天，期間可以原樣復原；超過之後自動清掉。",
+      "ja": "削除したデバイスは {0} 日間ここに保存し、その間はそのまま復元できます。過ぎると自動で消えます。",
+      "en": "Deleted devices stay here for {0} days and can be restored as they were. After that they are cleared automatically."
+    },
+    "trash_empty": {
+      "zh-CN": "回收站是空的。",
+      "zh-TW": "資源回收桶是空的。",
+      "ja": "ゴミ箱は空です。",
+      "en": "Trash is empty."
+    },
+    "trash_clear": {
+      "zh-CN": "清空回收站",
+      "zh-TW": "清空資源回收桶",
+      "ja": "ゴミ箱を空にする",
+      "en": "Empty Trash"
+    },
+    "trash_restore": {
+      "zh-CN": "恢复",
+      "zh-TW": "復原",
+      "ja": "復元",
+      "en": "Restore"
+    },
+    "trash_purge": {
+      "zh-CN": "彻底删除",
+      "zh-TW": "完全刪除",
+      "ja": "完全に削除",
+      "en": "Delete forever"
+    },
+    "trash_unnamed": {
+      "zh-CN": "未命名",
+      "zh-TW": "未命名",
+      "ja": "名称未設定",
+      "en": "Unnamed"
+    },
+    "trash_count": {
+      "zh-CN": "{0} 条",
+      "ph": [
+        "d"
+      ],
+      "zh-TW": "{0} 條",
+      "ja": "{0} 件",
+      "en": "{0} items"
+    },
+    "trash_days_left": {
+      "zh-CN": "还剩 {0} 天",
+      "ph": [
+        "d"
+      ],
+      "zh-TW": "還剩 {0} 天",
+      "ja": "残り {0} 日",
+      "en": "{0} days left"
+    },
+    "trash_expiring": {
+      "zh-CN": "即将清除",
+      "zh-TW": "即將清除",
+      "ja": "まもなく削除",
+      "en": "Expiring soon"
+    },
+    "trash_meta": {
+      "ph": [
+        "s",
+        "s",
+        "s",
+        "s"
+      ],
+      "zh-CN": "{0} · {1} · {2} · {3} 删除",
+      "zh-TW": "{0} · {1} · {2} · {3} 刪除",
+      "ja": "{0} · {1} · {2} · {3} に削除",
+      "en": "{0} · {1} · {2} · deleted {3}"
+    },
+    "data_title": {
+      "zh-CN": "菜单",
+      "zh-TW": "選單",
+      "ja": "メニュー",
+      "en": "Menu"
+    },
+    "data_intro": {
+      "zh-CN": "导出的文件安卓版与鸿蒙版通用，可以互相导入：一次带走设备、回收站与勋章。整个过程都在本机完成，不联网、不上传。",
+      "zh-TW": "匯出的檔案安卓版與鴻蒙版通用，可以互相匯入：一次帶走裝置、資源回收桶與勳章。整個過程都在本機完成，不聯網、不上傳。",
+      "ja": "書き出しファイルは Android 版と HarmonyOS 版で共通です。デバイス・ゴミ箱・バッジをまとめて持ち運べます。すべて端末内だけで完結し、通信もアップロードもしません。",
+      "en": "Exported files work across the Android and HarmonyOS apps, so you can move devices, trash and badges in one go. Everything stays on this device — no network, no upload."
+    },
+    "data_intro_trash_tail": {
+      "zh-CN": "，回收站 {0} 条",
+      "ph": [
+        "d"
+      ],
+      "zh-TW": "，資源回收桶 {0} 條",
+      "ja": "（ゴミ箱 {0} 件）",
+      "en": ", {0} in trash"
+    },
+    "data_export": {
+      "zh-CN": "导出到文件",
+      "zh-TW": "匯出到檔案",
+      "ja": "ファイルに書き出す",
+      "en": "Export to file"
+    },
+    "data_export_short": {
+      "zh-CN": "导出数据",
+      "zh-TW": "匯出資料",
+      "ja": "データを書き出す",
+      "en": "Export"
+    },
+    "data_share": {
+      "zh-CN": "分享",
+      "zh-TW": "分享",
+      "ja": "共有",
+      "en": "Share"
+    },
+    "data_import": {
+      "zh-CN": "从文件导入",
+      "zh-TW": "從檔案匯入",
+      "ja": "ファイルから読み込む",
+      "en": "Import from file"
+    },
+    "data_import_short": {
+      "zh-CN": "导入数据",
+      "zh-TW": "匯入資料",
+      "ja": "データを読み込む",
+      "en": "Import"
+    },
+    "data_auto_title": {
+      "zh-CN": "自动备份",
+      "zh-TW": "自動備份",
+      "ja": "自動バックアップ",
+      "en": "Automatic backup"
+    },
+    "data_auto_desc": {
+      "zh-CN": "每次改动数据前自动留一份快照，最多 {0} 份，超出就覆盖最旧的。恢复前会先把当前数据也留一份。",
+      "ph": [
+        "d"
+      ],
+      "zh-TW": "每次改動資料前自動留一份快照，最多 {0} 份，超出就覆蓋最舊的。復原前會先把目前資料也留一份。",
+      "ja": "データを変える前に自動でスナップショットを {0} 件まで残します。古いものから上書きされ、復元の前も今のデータを残してから行います。",
+      "en": "A snapshot is saved before each change — up to {0}, oldest overwritten first. Restoring keeps a copy of the current data too."
+    },
+    "data_no_snapshots": {
+      "zh-CN": "还没有快照，改动一次数据后就会出现。",
+      "zh-TW": "還沒有快照，改動一次資料後就會出現。",
+      "ja": "スナップショットはまだありません。一度変更すると出来ます。",
+      "en": "No snapshots yet. Change something once and one appears."
+    },
+    "data_no_auto_backups": {
+      "ph": ["d"],
+      "zh-CN": "还没有自动备份。改动数据时会在这里留快照，最多 {0} 份。",
+      "zh-TW": "還沒有自動備份。改動時會在這裡留快照，最多 {0} 份。",
+      "ja": "自動バックアップはまだありません。変更時にここへ最大 {0} 件残します。",
+      "en": "No automatic backups yet. Changes store up to {0} snapshots here."
+    },
+    "data_snapshot_row": {
+      "zh-CN": "{0} · {1}",
+      "ph": [
+        "s",
+        "s"
+      ],
+      "zh-TW": "{0} · {1}",
+      "ja": "{0} · {1}",
+      "en": "{0} · {1}"
+    },
+    "data_snapshot_devices": {
+      "zh-CN": "{0} 台设备",
+      "ph": [
+        "d"
+      ],
+      "zh-TW": "{0} 台裝置",
+      "ja": "{0} 台",
+      "en": "{0} devices"
+    },
+    "data_snapshot_badges": {
+      "zh-CN": "勋章 {0}",
+      "ph": [
+        "d"
+      ],
+      "zh-TW": "勳章 {0}",
+      "ja": "バッジ {0}",
+      "en": "{0} badges"
+    },
+    "data_snapshot_trash": {
+      "zh-CN": "回收站 {0}",
+      "ph": [
+        "d"
+      ],
+      "zh-TW": "資源回收桶 {0}",
+      "ja": "ゴミ箱 {0} 件",
+      "en": "{0} in trash"
+    },
+    "data_snapshot_restore_hint": {
+      "zh-CN": "点右侧恢复到这个时间点",
+      "zh-TW": "點右側復原到這個時間點",
+      "ja": "右端でこの時点に戻せます",
+      "en": "Tap the right side to restore this point"
+    },
+    "data_snapshot_restore": {
+      "zh-CN": "恢复",
+      "zh-TW": "復原",
+      "ja": "復元",
+      "en": "Restore"
+    },
+    "data_section_trash": {
+      "zh-CN": "回收站",
+      "zh-TW": "資源回收桶",
+      "ja": "ゴミ箱",
+      "en": "Trash"
+    },
+    "data_trash_row": {
+      "zh-CN": "{0} 条 · 保留 {1} 天",
+      "ph": [
+        "d",
+        "d"
+      ],
+      "zh-TW": "{0} 條 · 保留 {1} 天",
+      "ja": "{0} 件 · {1} 日間保持",
+      "en": "{0} items · kept {1} days"
+    },
+    "data_trash_row_empty": {
+      "zh-CN": "空",
+      "zh-TW": "空",
+      "ja": "空",
+      "en": "Empty"
+    },
+    "data_section_badges": {
+      "zh-CN": "里程碑勋章",
+      "zh-TW": "里程碑勳章",
+      "ja": "マイルストーンバッジ",
+      "en": "Milestone badges"
+    },
+    "data_badges_row": {
+      "zh-CN": "已点亮 {0} / {1}",
+      "ph": [
+        "d",
+        "d"
+      ],
+      "zh-TW": "已點亮 {0} / {1}",
+      "ja": "{0} / {1} 獲得済み",
+      "en": "{0} of {1} earned"
+    },
+    "data_lang_title": {
+      "zh-CN": "语言",
+      "zh-TW": "語言",
+      "ja": "言語",
+      "en": "Language"
+    },
+    "lang_system": {
+      "zh-CN": "跟随系统",
+      "zh-TW": "跟隨系統",
+      "ja": "システムに従う",
+      "en": "Match system"
+    },
+    "lang_zh_cn": {
+      "zh-CN": "简体中文",
+      "zh-TW": "简体中文",
+      "ja": "简体中文",
+      "en": "简体中文"
+    },
+    "lang_zh_tw": {
+      "zh-CN": "繁體中文",
+      "zh-TW": "繁體中文",
+      "ja": "繁體中文",
+      "en": "繁體中文"
+    },
+    "lang_ja": {
+      "zh-CN": "日本語",
+      "zh-TW": "日本語",
+      "ja": "日本語",
+      "en": "日本語"
+    },
+    "lang_en": {
+      "zh-CN": "English",
+      "zh-TW": "English",
+      "ja": "English",
+      "en": "English"
+    },
+    "import_unreadable": {
+      "zh-CN": "这个文件里读不出设备账的数据",
+      "zh-TW": "這個檔案裡讀不出裝置帳的資料",
+      "ja": "このファイルからデバイス台帳のデータを読み込めません",
+      "en": "This file has no Device Ledger data in it"
+    },
+    "import_snapshot_unreadable": {
+      "zh-CN": "这份快照读不出来了",
+      "zh-TW": "這份快照讀不出來了",
+      "ja": "このスナップショットは読み込めません",
+      "en": "This snapshot can’t be read"
+    },
+    "import_backup_unreadable": {
+      "zh-CN": "这份备份读不出来",
+      "zh-TW": "這份備份讀不出來",
+      "ja": "このバックアップは読み込めません",
+      "en": "This backup can’t be read"
+    },
+    "import_title": {
+      "zh-CN": "导入数据",
+      "zh-TW": "匯入資料",
+      "ja": "データを読み込む",
+      "en": "Import data"
+    },
+    "import_question": {
+      "zh-CN": "这份文件里有 {0} 台设备、{1} 条回收站记录、{2} 枚勋章。要怎么并进来？",
+      "ph": [
+        "d",
+        "d",
+        "d"
+      ],
+      "zh-TW": "這個檔案裡有 {0} 台裝置、{1} 條資源回收桶記錄、{2} 枚勳章。要怎麼併進來？",
+      "ja": "このファイルには {0} 台、ゴミ箱 {1} 件、バッジ {2} 個があります。どう統合しますか？",
+      "en": "This file has {0} devices, {1} trash items and {2} badges. How should it come in?"
+    },
+    "import_cancel": {
+      "zh-CN": "取消",
+      "zh-TW": "取消",
+      "ja": "キャンセル",
+      "en": "Cancel"
+    },
+    "import_overwrite": {
+      "zh-CN": "覆盖",
+      "zh-TW": "覆蓋",
+      "ja": "上書き",
+      "en": "Overwrite"
+    },
+    "import_merge": {
+      "zh-CN": "合并",
+      "zh-TW": "合併",
+      "ja": "統合",
+      "en": "Merge"
+    },
+    "import_rollback_overwrite": {
+      "zh-CN": "没能写好回退快照，已取消覆盖",
+      "zh-TW": "没能寫好回退快照，已取消覆蓋",
+      "ja": "戻し用のスナップショットを作れなかったため、上書きを中止しました",
+      "en": "Couldn’t write a rollback snapshot, so the overwrite was cancelled"
+    },
+    "import_rollback_import": {
+      "zh-CN": "没能写好回退快照，已取消导入",
+      "zh-TW": "没能寫好回退快照，已取消匯入",
+      "ja": "戻し用のスナップショットを作れなかったため、読み込みを中止しました",
+      "en": "Couldn’t write a rollback snapshot, so the import was cancelled"
+    },
+    "import_rollback_restore": {
+      "zh-CN": "没能写好回退快照，已取消恢复",
+      "zh-TW": "没能寫好回退快照，已取消復原",
+      "ja": "戻し用のスナップショットを作れなかったため、復元を中止しました",
+      "en": "Couldn’t write a rollback snapshot, so the restore was cancelled"
+    },
+    "import_overwritten": {
+      "zh-CN": "已换成文件里的数据",
+      "zh-TW": "已換成檔案裡的資料",
+      "ja": "ファイルのデータに置き換えました",
+      "en": "Replaced with the file’s data"
+    },
+    "import_done": {
+      "zh-CN": "导入完成，新增 {0} 台设备",
+      "ph": [
+        "d"
+      ],
+      "zh-TW": "匯入完成，新增 {0} 台裝置",
+      "ja": "読み込み完了、{0} 台追加しました",
+      "en": "Import finished, {0} devices added"
+    },
+    "import_nothing_new": {
+      "zh-CN": "没有新设备需要并入",
+      "zh-TW": "沒有新裝置需要併入",
+      "ja": "追加すべきデバイスはありません",
+      "en": "Nothing new to merge"
+    },
+    "import_exported": {
+      "zh-CN": "已导出 {0} 台设备",
+      "ph": [
+        "d"
+      ],
+      "zh-TW": "已匯出 {0} 台裝置",
+      "ja": "{0} 台を書き出しました",
+      "en": "Exported {0} devices"
+    },
+    "import_export_failed": {
+      "zh-CN": "导出失败，换一个位置再试",
+      "zh-TW": "匯出失敗，換一個位置再試",
+      "ja": "書き出しに失敗しました。場所を変えてもう一度どうぞ",
+      "en": "Export failed — try another location"
+    },
+    "import_share_failed": {
+      "zh-CN": "没能准备好要分享的文件",
+      "zh-TW": "没能準備好要分享的檔案",
+      "ja": "共有するファイルを用意できませんでした",
+      "en": "Couldn’t prepare the file to share"
+    },
+    "import_chooser_title": {
+      "zh-CN": "导出设备账数据",
+      "zh-TW": "匯出裝置帳資料",
+      "ja": "デバイス台帳を書き出す",
+      "en": "Export Device Ledger data"
+    },
+    "import_no_receiver": {
+      "zh-CN": "这台机器上没有可接收文件的应用",
+      "zh-TW": "這台機器上沒有可接收檔案的應用",
+      "ja": "ファイルを受け取るアプリが見つかりません",
+      "en": "No app on this device accepts the file"
+    },
+    "import_duplicate": {
+      "zh-CN": "这台设备已经在列表里了",
+      "zh-TW": "這台裝置已經在列表裡了",
+      "ja": "このデバイスは既に一覧にあります",
+      "en": "That device is already in the list"
+    },
+    "import_restored": {
+      "zh-CN": "已恢复「{0}」",
+      "ph": [
+        "s"
+      ],
+      "zh-TW": "已復原「{0}」",
+      "ja": "「{0}」を復元しました",
+      "en": "Restored “{0}”"
+    },
+    "restore_title": {
+      "zh-CN": "恢复备份",
+      "zh-TW": "復原備份",
+      "ja": "バックアップから復元",
+      "en": "Restore backup"
+    },
+    "restore_message": {
+      "zh-CN": "把现在的 {0} 台设备换回 {1} 台（{2} 那一份）。当前数据会先自动留一份快照，恢复之后还能再换回来。",
+      "ph": [
+        "d",
+        "d",
+        "s"
+      ],
+      "zh-TW": "把現在的 {0} 台裝置換回 {1} 台（{2} 那一份）。目前資料會先自動留一份快照，復原之後還能再換回來。",
+      "ja": "今の {0} 台を {1} 台（{2} のもの）に戻します。その前に今のデータも自動で残すので、戻すこともできます。",
+      "en": "This replaces the current {0} devices with the {1} from {2}. Your current data is snapshotted first, so you can come back."
+    },
+    "restore_confirm": {
+      "zh-CN": "确认恢复",
+      "zh-TW": "確認復原",
+      "ja": "復元する",
+      "en": "Restore"
+    },
+    "restore_done": {
+      "zh-CN": "已恢复到这一份快照",
+      "zh-TW": "已復原到這份快照",
+      "ja": "このスナップショットに戻しました",
+      "en": "Restored to this snapshot"
+    },
+    "restore_done_point": {
+      "zh-CN": "已恢复到这个时间点",
+      "zh-TW": "已復原到這個時間點",
+      "ja": "この時点に戻しました",
+      "en": "Restored to this point in time"
+    },
+    "clear_trash_title": {
+      "zh-CN": "清空回收站",
+      "zh-TW": "清空資源回收桶",
+      "ja": "ゴミ箱を空にする",
+      "en": "Empty Trash"
+    },
+    "clear_trash_message": {
+      "zh-CN": "回收站里的 {0} 条记录会被彻底删除，删掉之后找不回来。",
+      "ph": [
+        "d"
+      ],
+      "zh-TW": "資源回收桶裡的 {0} 條記錄會被完全刪除，刪掉之後找不回來。",
+      "ja": "ゴミ箱の {0} 件を完全に削除します。消したものは戻せません。",
+      "en": "This permanently deletes {0} items in Trash. They can’t come back."
+    },
+    "clear_trash_confirm": {
+      "zh-CN": "清空",
+      "zh-TW": "清空",
+      "ja": "空にする",
+      "en": "Empty"
+    },
+    "common_cancel": {
+      "zh-CN": "取消",
+      "zh-TW": "取消",
+      "ja": "キャンセル",
+      "en": "Cancel"
+    },
+    "card_avg_label": {
+      "zh-CN": "日均",
+      "zh-TW": "日均",
+      "ja": "1日",
+      "en": "Daily"
+    },
+    "card_used_days": {
+      "zh-CN": "已用 {0} · {1}",
+      "ph": [
+        "s",
+        "s"
+      ],
+      "zh-TW": "已用 {0} · {1}",
+      "ja": "{0} 使用中 · {1}",
+      "en": "Used {0} · {1}"
+    },
+    "badge_wall_title": {
+      "zh-CN": "里程碑勋章",
+      "zh-TW": "里程碑勳章",
+      "ja": "マイルストーンバッジ",
+      "en": "Milestone badges"
+    },
+    "badge_wall_short": {
+      "zh-CN": "里程碑",
+      "zh-TW": "里程碑",
+      "ja": "マイルストーン",
+      "en": "Milestones"
+    },
+    "badge_wall_subtitle": {
+      "zh-CN": "记录设备路上的一个个小节点",
+      "zh-TW": "記錄裝置路上的一個個小節點",
+      "ja": "デバイスを記録する道のりの節目",
+      "en": "Little markers along the way"
+    },
+    "badge_wall_progress": {
+      "zh-CN": "已点亮 {0} / {1}",
+      "ph": [
+        "d",
+        "d"
+      ],
+      "zh-TW": "已點亮 {0} / {1}",
+      "ja": "{0} / {1} 獲得済み",
+      "en": "{0} of {1} earned"
+    },
+    "badge_wall_keep": {
+      "zh-CN": "达成后一直保留，即便数字回落也不会熄灭。",
+      "zh-TW": "達成後一直保留，即便數字回落也不會熄滅。",
+      "ja": "得たら消えません。数字が戻っても点いたままです。",
+      "en": "Once earned, always kept — even if the numbers fall back."
+    },
+    "badge_wall_close": {
+      "zh-CN": "知道了",
+      "zh-TW": "知道了",
+      "ja": "了解",
+      "en": "Got it"
+    },
+    "badge_unlocked_at": {
+      "zh-CN": "{0} 达成",
+      "ph": [
+        "s"
+      ],
+      "zh-TW": "{0} 達成",
+      "ja": "{0} 達成",
+      "en": "Earned {0}"
+    },
+    "celebrate_hint": {
+      "zh-CN": "轻点空白处关闭",
+      "zh-TW": "輕點空白處關閉",
+      "ja": "何処かタップで閉じる",
+      "en": "Tap anywhere to dismiss"
+    },
+    "celebrate_page": {
+      "zh-CN": "{0} / {1}",
+      "ph": [
+        "d",
+        "d"
+      ],
+      "zh-TW": "{0} / {1}",
+      "ja": "{0} / {1}",
+      "en": "{0} / {1}"
+    },
+    "kind_phone": {
+      "zh-CN": "手机",
+      "zh-TW": "手機",
+      "ja": "スマートフォン",
+      "en": "Phone"
+    },
+    "kind_laptop": {
+      "zh-CN": "笔记本",
+      "zh-TW": "筆記型電腦",
+      "ja": "ノートPC",
+      "en": "Laptop"
+    },
+    "kind_tablet": {
+      "zh-CN": "平板",
+      "zh-TW": "平板",
+      "ja": "タブレット",
+      "en": "Tablet"
+    },
+    "kind_desktop": {
+      "zh-CN": "台式主机",
+      "zh-TW": "桌機",
+      "ja": "デスクトップPC",
+      "en": "Desktop"
+    },
+    "kind_monitor": {
+      "zh-CN": "显示器",
+      "zh-TW": "螢幕",
+      "ja": "モニター",
+      "en": "Monitor"
+    },
+    "kind_tv": {
+      "zh-CN": "电视",
+      "zh-TW": "電視",
+      "ja": "テレビ",
+      "en": "TV"
+    },
+    "kind_projector": {
+      "zh-CN": "投影仪",
+      "zh-TW": "投影機",
+      "ja": "プロジェクター",
+      "en": "Projector"
+    },
+    "kind_camera": {
+      "zh-CN": "相机",
+      "zh-TW": "相機",
+      "ja": "カメラ",
+      "en": "Camera"
+    },
+    "kind_actioncam": {
+      "zh-CN": "运动相机",
+      "zh-TW": "運動相機",
+      "ja": "アクションカム",
+      "en": "Action cam"
+    },
+    "kind_drone": {
+      "zh-CN": "无人机",
+      "zh-TW": "無人機",
+      "ja": "ドローン",
+      "en": "Drone"
+    },
+    "kind_headphone": {
+      "zh-CN": "头戴耳机",
+      "zh-TW": "頭戴式耳機",
+      "ja": "ヘッドホン",
+      "en": "Headphones"
+    },
+    "kind_earbuds": {
+      "zh-CN": "蓝牙耳机",
+      "zh-TW": "藍牙耳機",
+      "ja": "ワイヤレスイヤホン",
+      "en": "Earbuds"
+    },
+    "kind_speaker": {
+      "zh-CN": "音箱",
+      "zh-TW": "喇叭",
+      "ja": "スピーカー",
+      "en": "Speaker"
+    },
+    "kind_smartspeaker": {
+      "zh-CN": "智能音箱",
+      "zh-TW": "智慧音箱",
+      "ja": "スマートスピーカー",
+      "en": "Smart speaker"
+    },
+    "kind_mic": {
+      "zh-CN": "麦克风",
+      "zh-TW": "麥克風",
+      "ja": "マイク",
+      "en": "Microphone"
+    },
+    "kind_watch": {
+      "zh-CN": "智能手表",
+      "zh-TW": "智慧手錶",
+      "ja": "スマートウォッチ",
+      "en": "Smartwatch"
+    },
+    "kind_band": {
+      "zh-CN": "智能手环",
+      "zh-TW": "智慧手環",
+      "ja": "フィットネスバンド",
+      "en": "Fitness band"
+    },
+    "kind_vr": {
+      "zh-CN": "VR 眼镜",
+      "zh-TW": "VR 頭盔",
+      "ja": "VRゴーグル",
+      "en": "VR headset"
+    },
+    "kind_console": {
+      "zh-CN": "游戏主机",
+      "zh-TW": "遊戲主機",
+      "ja": "ゲーム機",
+      "en": "Console"
+    },
+    "kind_handheld": {
+      "zh-CN": "掌上游戏机",
+      "zh-TW": "掌上型遊戲機",
+      "ja": "携帯ゲーム機",
+      "en": "Handheld"
+    },
+    "kind_keyboard": {
+      "zh-CN": "键盘",
+      "zh-TW": "鍵盤",
+      "ja": "キーボード",
+      "en": "Keyboard"
+    },
+    "kind_mouse": {
+      "zh-CN": "鼠标",
+      "zh-TW": "滑鼠",
+      "ja": "マウス",
+      "en": "Mouse"
+    },
+    "kind_drawing": {
+      "zh-CN": "数位板",
+      "zh-TW": "繪板",
+      "ja": "筆タブ",
+      "en": "Drawing tab"
+    },
+    "kind_stylus": {
+      "zh-CN": "手写笔",
+      "zh-TW": "手寫筆",
+      "ja": "スタイラス",
+      "en": "Stylus"
+    },
+    "kind_printer": {
+      "zh-CN": "打印机",
+      "zh-TW": "印表機",
+      "ja": "プリンター",
+      "en": "Printer"
+    },
+    "kind_router": {
+      "zh-CN": "路由器",
+      "zh-TW": "數據機",
+      "ja": "ルーター",
+      "en": "Router"
+    },
+    "kind_nas": {
+      "zh-CN": "硬盘 / 存储",
+      "zh-TW": "硬碟 / 儲存",
+      "ja": "ストレージ",
+      "en": "Storage"
+    },
+    "kind_powerbank": {
+      "zh-CN": "充电宝",
+      "zh-TW": "行動電源",
+      "ja": "モバイルバッテリー",
+      "en": "Power bank"
+    },
+    "kind_charger": {
+      "zh-CN": "充电器",
+      "zh-TW": "充電器",
+      "ja": "充電器",
+      "en": "Charger"
+    },
+    "kind_fridge": {
+      "zh-CN": "冰箱",
+      "zh-TW": "冰箱",
+      "ja": "冷蔵庫",
+      "en": "Fridge"
+    },
+    "kind_washer": {
+      "zh-CN": "洗衣机",
+      "zh-TW": "洗衣機",
+      "ja": "洗濯機",
+      "en": "Washer"
+    },
+    "kind_ac": {
+      "zh-CN": "空调",
+      "zh-TW": "冷氣",
+      "ja": "エアコン",
+      "en": "A/C"
+    },
+    "kind_microwave": {
+      "zh-CN": "微波炉",
+      "zh-TW": "微波爐",
+      "ja": "電子レンジ",
+      "en": "Microwave"
+    },
+    "kind_fan": {
+      "zh-CN": "风扇",
+      "zh-TW": "電扇",
+      "ja": "扇風機",
+      "en": "Fan"
+    },
+    "kind_robot": {
+      "zh-CN": "扫地机器人",
+      "zh-TW": "掃地機器人",
+      "ja": "ロボット掃除機",
+      "en": "Robot vac"
+    },
+    "kind_ereader": {
+      "zh-CN": "电纸书",
+      "zh-TW": "電子書閱讀器",
+      "ja": "電子書籍リーダー",
+      "en": "E-reader"
+    },
+    "kind_hairdryer": {
+      "zh-CN": "吹风机",
+      "zh-TW": "吹風機",
+      "ja": "ドライヤー",
+      "en": "Hair dryer"
+    },
+    "kind_toothbrush": {
+      "zh-CN": "电动牙刷",
+      "zh-TW": "電動牙刷",
+      "ja": "電動歯ブラシ",
+      "en": "Toothbrush"
+    },
+    "kind_shaver": {
+      "zh-CN": "剃须刀",
+      "zh-TW": "刮鬍刀",
+      "ja": "シェーバー",
+      "en": "Shaver"
+    },
+    "kind_gamepad": {
+      "zh-CN": "游戏手柄",
+      "zh-TW": "遊戲手把",
+      "ja": "コントローラー",
+      "en": "Controller"
+    },
+    "kind_other": {
+      "zh-CN": "其他",
+      "zh-TW": "其他",
+      "ja": "その他",
+      "en": "Other"
+    },
+    "badge_first_device_name": {
+      "zh-CN": "初次见面",
+      "zh-TW": "初次見面",
+      "ja": "最初の一台",
+      "en": "First Device"
+    },
+    "badge_first_device_desc": {
+      "zh-CN": "记录第一台设备",
+      "zh-TW": "記錄第一台裝置",
+      "ja": "初めてのデバイスを記録",
+      "en": "Log your first device"
+    },
+    "badge_count_10_name": {
+      "zh-CN": "十全十美",
+      "zh-TW": "十全十美",
+      "ja": "十台揃い",
+      "en": "Perfect Ten"
+    },
+    "badge_count_10_desc": {
+      "zh-CN": "设备数达到 10 台",
+      "zh-TW": "裝置數達到 10 台",
+      "ja": "デバイスが 10 台",
+      "en": "Reach 10 devices"
+    },
+    "badge_count_25_name": {
+      "zh-CN": "成群结队",
+      "zh-TW": "成群結隊",
+      "ja": "二十五の群れ",
+      "en": "Quire"
+    },
+    "badge_count_25_desc": {
+      "zh-CN": "设备数达到 25 台",
+      "zh-TW": "裝置數達到 25 台",
+      "ja": "デバイスが 25 台",
+      "en": "Reach 25 devices"
+    },
+    "badge_spend_1k_name": {
+      "zh-CN": "小有积蓄",
+      "zh-TW": "小有積蓄",
+      "ja": "少しずつ",
+      "en": "First Savings"
+    },
+    "badge_spend_1k_desc": {
+      "zh-CN": "总投入超过 1000 元",
+      "zh-TW": "總投入超過 1000 元",
+      "ja": "総額が 1000 元超え",
+      "en": "Invest over $1,000"
+    },
+    "badge_spend_10k_name": {
+      "zh-CN": "万元户",
+      "zh-TW": "萬元戶",
+      "ja": "一万円の壁",
+      "en": "Big Spender"
+    },
+    "badge_spend_10k_desc": {
+      "zh-CN": "总投入超过 10000 元",
+      "zh-TW": "總投入超過 10000 元",
+      "ja": "総額が 10000 元超え",
+      "en": "Invest over $10,000"
+    },
+    "badge_spend_50k_name": {
+      "zh-CN": "家底殷实",
+      "zh-TW": "家底殷實",
+      "ja": "五十万円の余裕",
+      "en": "Well Provided"
+    },
+    "badge_spend_50k_desc": {
+      "zh-CN": "总投入超过 50000 元",
+      "zh-TW": "總投入超過 50000 元",
+      "ja": "総額が 50000 元超え",
+      "en": "Invest over $50,000"
+    },
+    "badge_fav_3_name": {
+      "zh-CN": "心头好",
+      "zh-TW": "心頭好",
+      "ja": "三つのお気に入り",
+      "en": "Three Faves"
+    },
+    "badge_fav_3_desc": {
+      "zh-CN": "收藏 3 台设备",
+      "zh-TW": "收藏 3 台裝置",
+      "ja": "3 台をお気に入りに",
+      "en": "Favorite 3 devices"
+    },
+    "badge_fav_10_name": {
+      "zh-CN": "宠爱有加",
+      "zh-TW": "寵愛有加",
+      "ja": "十選",
+      "en": "Top Ten"
+    },
+    "badge_fav_10_desc": {
+      "zh-CN": "收藏 10 台设备",
+      "zh-TW": "收藏 10 台裝置",
+      "ja": "10 台をお気に入りに",
+      "en": "Favorite 10 devices"
+    },
+    "badge_days_365_name": {
+      "zh-CN": "长情相伴",
+      "zh-TW": "長情相伴",
+      "ja": "一年の付き合い",
+      "en": "A Year Together"
+    },
+    "badge_days_365_desc": {
+      "zh-CN": "有设备用满 365 天",
+      "zh-TW": "有裝置用滿 365 天",
+      "ja": "365 日使い続けたデバイス",
+      "en": "A device used for 365 days"
+    },
+    "badge_days_1095_name": {
+      "zh-CN": "三年之约",
+      "zh-TW": "三年之約",
+      "ja": "三年の約束",
+      "en": "Three Year Club"
+    },
+    "badge_days_1095_desc": {
+      "zh-CN": "有设备用满 1095 天",
+      "zh-TW": "有裝置用滿 1095 天",
+      "ja": "1095 日使い続けたデバイス",
+      "en": "A device used for 1095 days"
+    },
+    "badge_kind_8_name": {
+      "zh-CN": "品类达人",
+      "zh-TW": "品類達人",
+      "ja": "ジャンル通",
+      "en": "Kind Collector"
+    },
+    "badge_kind_8_desc": {
+      "zh-CN": "覆盖 8 种设备类型",
+      "zh-TW": "覆蓋 8 種裝置類型",
+      "ja": "8 種類をカバー",
+      "en": "Cover 8 categories"
+    },
+    "badge_kind_20_name": {
+      "zh-CN": "面面俱到",
+      "zh-TW": "面面俱到",
+      "ja": "二十二種揃え",
+      "en": "Well Rounded"
+    },
+    "badge_kind_20_desc": {
+      "zh-CN": "覆盖 20 种设备类型",
+      "zh-TW": "覆蓋 20 種裝置類型",
+      "ja": "20 種類をカバー",
+      "en": "Cover 20 categories"
+    },
+    "badge_roi_name": {
+      "zh-CN": "回本达人",
+      "zh-TW": "回本達人",
+      "ja": "元が取れた",
+      "en": "Value King"
+    },
+    "badge_roi_desc": {
+      "zh-CN": "有设备日均低于 0.5 元",
+      "zh-TW": "有裝置日均低於 0.5 元",
+      "ja": "1日均 0.5 元未満のデバイス",
+      "en": "A device under $0.50 a day"
+    },
+    "badge_big_ticket_name": {
+      "zh-CN": "大手笔",
+      "zh-TW": "大手筆",
+      "ja": "高額な一台",
+      "en": "Big Ticket"
+    },
+    "badge_big_ticket_desc": {
+      "zh-CN": "单台设备超过 5000 元",
+      "zh-TW": "單台裝置超過 5000 元",
+      "ja": "一台が 5000 元超え",
+      "en": "One device over $5,000"
+    },
+    "privacy_title": {
+      "zh-CN": "欢迎使用设备账",
+      "zh-TW": "歡迎使用裝置帳",
+      "ja": "デバイス台帳へようこそ",
+      "en": "Welcome to Device Ledger"
+    },
+    "privacy_body": {
+      "zh-CN": "设备账把你买的每一台设备都记在本机：不联网、不上传、不读取任何与设备无关的个人信息。开始前，请先阅读并同意下面两份条款。",
+      "zh-TW": "裝置帳把你買的每一台裝置都記在本機：不聯網、不上傳、不讀取任何與裝置無關的個人資料。開始前，請先閱讀並同意下面兩份條款。",
+      "ja": "デバイス台帳は買った各デバイスを端末内にだけ記録します。通信もアップロードも、デバイスと無関係な個人情報の読み取りもしません。始める前に、下の二つの規約をお読みいただき同意してください。",
+      "en": "Device Ledger keeps every device you buy on this device only: no network, no uploads, and no personal information unrelated to your devices. Before you start, please read and agree to the two terms below."
+    },
+    "privacy_link_policy": {
+      "zh-CN": "《隐私条款》",
+      "zh-TW": "《隱私條款》",
+      "ja": "「プライバシーポリシー」",
+      "en": "Privacy Policy"
+    },
+    "privacy_link_terms": {
+      "zh-CN": "《服务条款》",
+      "zh-TW": "《服務條款》",
+      "ja": "「利用規約」",
+      "en": "Terms of Service"
+    },
+    "privacy_check": {
+      "zh-CN": "我已阅读并同意上述条款",
+      "zh-TW": "我已閱讀並同意上述條款",
+      "ja": "上記の規約を読み、同意します",
+      "en": "I have read and agree to the terms above"
+    },
+    "privacy_agree": {
+      "zh-CN": "同意并进入",
+      "zh-TW": "同意並進入",
+      "ja": "同意してはじめる",
+      "en": "Agree and continue"
+    },
+    "privacy_exit": {
+      "zh-CN": "不同意，退出应用",
+      "zh-TW": "不同意，結束應用",
+      "ja": "同意せず終了",
+      "en": "Disagree and quit"
+    },
+    "privacy_hint": {
+      "zh-CN": "请先阅读并勾选同意条款",
+      "zh-TW": "請先閱讀並勾選同意條款",
+      "ja": "規約を読んでチェックを入れてください",
+      "en": "Please read and tick the agreement first"
+    },
+    "fmt_currency": {
+      "zh-CN": "¥",
+      "zh-TW": "NT$",
+      "ja": "¥",
+      "en": "$"
+    },
+    "footer_github": {
+      "ph": ["s"],
+      "zh-CN": "我的 GitHub：{0}",
+      "zh-TW": "我的 GitHub：{0}",
+      "ja": "私の GitHub：{0}",
+      "en": "My GitHub: {0}"
+    },
+    "fmt_wan": {
+      "zh-CN": "万",
+      "zh-TW": "萬",
+      "ja": "万",
+      "en": "K"
+    },
+    "fmt_yi": {
+      "zh-CN": "亿",
+      "zh-TW": "億",
+      "ja": "億",
+      "en": "B"
+    },
+    "module_desc": {
+      "zh-CN": "设备账模块",
+      "zh-TW": "裝置帳模組",
+      "ja": "デバイス台帳モジュール",
+      "en": "Device Ledger module"
+    },
+    "EntryAbility_desc": {
+      "zh-CN": "设备账",
+      "zh-TW": "裝置帳",
+      "ja": "デバイス台帳",
+      "en": "Device Ledger"
+    },
+    "EntryAbility_label": {
+      "zh-CN": "设备账",
+      "zh-TW": "裝置帳",
+      "ja": "デバイス台帳",
+      "en": "Device Ledger"
+    },
+    "fmt_k": {
+      "zh-CN": "千",
+      "zh-TW": "千",
+      "ja": "千",
+      "en": "K"
+    },
+    "fmt_m": {
+      "zh-CN": "百万",
+      "zh-TW": "百萬",
+      "ja": "百万",
+      "en": "M"
+    },
+    "fmt_b": {
+      "zh-CN": "十亿",
+      "zh-TW": "十億",
+      "ja": "十億",
+      "en": "B"
+    }
+  },
+  "plurals": {
+    "p_in_record": {
+      "zh-CN": {
+        "other": "{0} 台在册"
+      },
+      "zh-TW": {
+        "other": "{0} 台在冊"
+      },
+      "ja": {
+        "other": "{0} 台"
+      },
+      "en": {
+        "one": "{0} device",
+        "other": "{0} devices"
+      }
+    },
+    "p_sticky_count": {
+      "zh-CN": {
+        "other": "{0} 台"
+      },
+      "zh-TW": {
+        "other": "{0} 台"
+      },
+      "ja": {
+        "other": "{0} 台"
+      },
+      "en": {
+        "one": "{0} device",
+        "other": "{0} devices"
+      }
+    },
+    "p_items": {
+      "zh-CN": {
+        "other": "{0} 条"
+      },
+      "zh-TW": {
+        "other": "{0} 條"
+      },
+      "ja": {
+        "other": "{0} 件"
+      },
+      "en": {
+        "one": "{0} item",
+        "other": "{0} items"
+      }
+    },
+    "p_days": {
+      "zh-CN": {
+        "other": "{0} 天"
+      },
+      "zh-TW": {
+        "other": "{0} 天"
+      },
+      "ja": {
+        "other": "{0} 日"
+      },
+      "en": {
+        "one": "{0} day",
+        "other": "{0} days"
+      }
+    },
+    "p_months": {
+      "zh-CN": {
+        "other": "{0} 个月"
+      },
+      "zh-TW": {
+        "other": "{0} 個月"
+      },
+      "ja": {
+        "other": "{0} ヶ月"
+      },
+      "en": {
+        "one": "{0} month",
+        "other": "{0} months"
+      }
+    },
+    "p_years": {
+      "zh-CN": {
+        "other": "{0} 年"
+      },
+      "zh-TW": {
+        "other": "{0} 年"
+      },
+      "ja": {
+        "other": "{0} 年"
+      },
+      "en": {
+        "one": "{0} year",
+        "other": "{0} years"
+      }
+    },
+    "p_years_months": {
+      "zh-CN": {
+        "other": "{0} 年 {1} 个月"
+      },
+      "zh-TW": {
+        "other": "{0} 年 {1} 個月"
+      },
+      "ja": {
+        "other": "{0} 年 {1} ヶ月"
+      },
+      "en": {
+        "one": "{0} yr {1} mo",
+        "other": "{0} yr {1} mo"
+      }
+    },
+    "p_used_days": {
+      "zh-CN": {
+        "other": "用了 {0} 天"
+      },
+      "zh-TW": {
+        "other": "用了 {0} 天"
+      },
+      "ja": {
+        "other": "{0} 日使用"
+      },
+      "en": {
+        "one": "used {0} day",
+        "other": "used {0} days"
+      }
+    },
+    "p_data_intro": {
+      "zh-CN": {
+        "other": "当前共 {0} 台设备{1}。导出的文件安卓版与鸿蒙版通用。"
+      },
+      "zh-TW": {
+        "other": "目前共 {0} 台裝置{1}。匯出的檔案安卓版與鴻蒙版通用。"
+      },
+      "ja": {
+        "other": "現在 {0} 台{1}。書き出しファイルは Android 版と HarmonyOS 版で共通です。"
+      },
+      "en": {
+        "one": "There is {0} device{1}. Exported files work on both Android and HarmonyOS.",
+        "other": "There are {0} devices{1}. Exported files work on both Android and HarmonyOS."
+      }
+    },
+    "p_center_count": {
+      "zh-CN": {
+        "other": "台设备"
+      },
+      "zh-TW": {
+        "other": "台裝置"
+      },
+      "ja": {
+        "other": "台"
+      },
+      "en": {
+        "one": "device",
+        "other": "devices"
+      }
+    }
+  }
+}
