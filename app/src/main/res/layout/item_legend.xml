@@ -10,6 +10,8 @@
         android:layout_width="9dp"
         android:layout_height="9dp" />
 
+    <!-- 图例名现在是拉丁单词（Drawing Tablet 等），恢复默认字体内边距，
+         12sp 在 22dp 行高里放得下，且 g/y 之类的下伸部不再被裁 -->
     <TextView
         android:id="@+id/tvLegendName"
         android:layout_width="0dp"
@@ -17,7 +19,6 @@
         android:layout_marginLeft="7dp"
         android:layout_weight="1"
         android:ellipsize="end"
-        android:includeFontPadding="false"
         android:maxLines="1"
         android:textSize="12sp" />
 
@@ -25,15 +26,20 @@
         android:id="@+id/tvLegendValue"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:maxLines="1"
         android:includeFontPadding="false"
         android:textSize="12sp"
         android:textStyle="bold" />
 
+    <!-- 38dp 定宽列保持不变：百分比是「数字+%」的 ASCII 串（最长 "100%"），
+         11sp 下约 24dp，装得下；补 maxLines=1 兜底 -->
     <TextView
         android:id="@+id/tvLegendPercent"
         android:layout_width="38dp"
         android:layout_height="wrap_content"
         android:gravity="end"
         android:includeFontPadding="false"
+        android:maxLines="1"
         android:textSize="11sp" />
 </LinearLayout>

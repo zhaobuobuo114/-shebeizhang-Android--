@@ -52,7 +52,7 @@
             android:layout_marginTop="30dp"
             android:alpha="0"
             android:gravity="center"
-            android:text="轻点空白处关闭"
+            android:text="@string/celebrate_hint"
             android:textSize="11sp" />
     </LinearLayout>
 </FrameLayout>

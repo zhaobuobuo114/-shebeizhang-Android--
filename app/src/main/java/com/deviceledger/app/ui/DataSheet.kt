@@ -3,8 +3,11 @@ package com.deviceledger.app.ui
 import android.app.Dialog
 import android.widget.LinearLayout
 import androidx.appcompat.app.AppCompatActivity
+import com.deviceledger.app.R
 import com.deviceledger.app.util.BackupStore
 import com.deviceledger.app.util.DateUtil
+import com.deviceledger.app.util.L10n
+import com.deviceledger.app.util.Lang
 
 /**
  * 数据与备份面板：导出、导入、自动备份、回收站、勋章墙五件事的入口。
@@ -18,7 +21,9 @@ object DataSheet {
         val deviceCount: Int,
         val trashCount: Int,
         val badgeCount: Int,
-        val backups: List<BackupStore.BackupFile>
+        val backups: List<BackupStore.BackupFile>,
+        /** 当前选择的语言：`system` 或四种 tag 之一，用来打勾 */
+        val languageTag: String
     )
 
     class DataActions(
@@ -27,7 +32,8 @@ object DataSheet {
         val onImportPick: () -> Unit,
         val onRestoreBackup: (slot: Int) -> Unit,
         val onOpenTrash: () -> Unit,
-        val onOpenBadges: () -> Unit
+        val onOpenBadges: () -> Unit,
+        val onPickLanguage: (tag: String) -> Unit
     )
 
     /**
@@ -40,45 +46,72 @@ object DataSheet {
         actions: DataActions
     ): Dialog {
         val ctx = activity
-        return SheetKit.show(activity, theme, "数据与备份") { body, dismiss ->
+        return SheetKit.show(activity, theme, L10n.str(ctx, R.string.data_title)) { body, dismiss ->
             val paint = {
                 body.removeAllViews()
                 val cur = info()
 
+                // ---- 语言 ----
+                // 放在最前面：界面已经是错语言的人，最需要第一眼就看到这一栏。
+                // 五种选项的文案用自称（简体中文 / 繁體中文 / 日本語 / English），
+                // 四种语言下都一样，这样即便完全看不懂当前界面也能认出我要的那一种。
+                body.addView(SheetKit.sectionTitle(ctx, theme, L10n.str(ctx, R.string.data_lang_title)))
+                val options = listOf(
+                    L10n.FOLLOW_SYSTEM to R.string.lang_system,
+                    Lang.ZH_CN.tag to R.string.lang_zh_cn,
+                    Lang.ZH_TW.tag to R.string.lang_zh_tw,
+                    Lang.JA.tag to R.string.lang_ja,
+                    Lang.EN.tag to R.string.lang_en
+                )
+                for ((tag, res) in options) {
+                    body.addView(
+                        SheetKit.entryRow(
+                            ctx, theme,
+                            L10n.str(ctx, res),
+                            if (cur.languageTag == tag) "✓" else ""
+                        ) {
+                            actions.onPickLanguage(tag)
+                        }
+                    )
+                }
+
                 body.addView(
                     SheetKit.note(
                         ctx, theme,
-                        "导出的文件安卓版与鸿蒙版通用，可以互相导入：一次带走设备、回收站与勋章。" +
-                            "整个过程都在本机完成，不联网、不上传。"
+                        L10n.str(ctx, R.string.data_intro)
                     )
                 )
 
                 body.addView(
                     SheetKit.buttonRow(
                         ctx,
-                        SheetKit.button(ctx, theme, "导出到文件", true) { actions.onExportFile() },
-                        SheetKit.button(ctx, theme, "分享", false) { actions.onShare() },
-                        SheetKit.button(ctx, theme, "从文件导入", false) { actions.onImportPick() }
+                        SheetKit.button(ctx, theme, L10n.str(ctx, R.string.data_export), true) { actions.onExportFile() },
+                        SheetKit.button(ctx, theme, L10n.str(ctx, R.string.data_share), false) { actions.onShare() },
+                        SheetKit.button(ctx, theme, L10n.str(ctx, R.string.data_import), false) { actions.onImportPick() }
                     )
                 )
 
                 // ---- 自动备份 ----
-                body.addView(SheetKit.sectionTitle(ctx, theme, "自动备份"))
+                body.addView(SheetKit.sectionTitle(ctx, theme, L10n.str(ctx, R.string.data_auto_title)))
                 body.addView(
                     SheetKit.note(
                         ctx, theme,
-                        "每次改动数据前自动留一份快照，最多 " + BackupStore.SLOTS +
-                            " 份，超出就覆盖最旧的。恢复前会先把当前数据也留一份。"
+                        L10n.str(ctx, R.string.data_auto_desc, BackupStore.SLOTS.toString())
                     )
                 )
                 if (cur.backups.isEmpty()) {
-                    body.addView(SheetKit.note(ctx, theme, "还没有快照，改动一次数据后就会出现。"))
+                    body.addView(SheetKit.note(ctx, theme, L10n.str(ctx, R.string.data_no_snapshots)))
                 } else {
                     for (b in cur.backups) {
-                        val value = b.deviceCount.toString() + " 台设备" +
-                            (if (b.badgeCount > 0) " · 勋章 " + b.badgeCount else "")
+                        val devices = L10n.str(ctx, R.string.data_snapshot_devices, b.deviceCount.toString())
+                        val value = if (b.badgeCount > 0) {
+                            L10n.str(
+                                ctx, R.string.data_snapshot_row,
+                                devices, L10n.str(ctx, R.string.data_snapshot_badges, b.badgeCount.toString())
+                            )
+                        } else devices
                         body.addView(
-                            SheetKit.entryRow(ctx, theme, DateUtil.formatClock(b.at), value) {
+                            SheetKit.entryRow(ctx, theme, DateUtil.formatClock(ctx, b.at), value) {
                                 actions.onRestoreBackup(b.slot)
                             }
                         )
@@ -86,12 +119,17 @@ object DataSheet {
                 }
 
                 // ---- 回收站 ----
-                body.addView(SheetKit.sectionTitle(ctx, theme, "回收站"))
+                body.addView(SheetKit.sectionTitle(ctx, theme, L10n.str(ctx, R.string.data_section_trash)))
+                val trashValue = if (cur.trashCount == 0) {
+                    L10n.str(ctx, R.string.data_trash_row_empty)
+                } else {
+                    L10n.str(ctx, R.string.data_trash_row, cur.trashCount.toString(), BackupStore.KEEP_DAYS.toString())
+                }
                 body.addView(
                     SheetKit.entryRow(
                         ctx, theme,
-                        "回收站",
-                        cur.trashCount.toString() + " 条 · 保留 " + BackupStore.KEEP_DAYS + " 天"
+                        L10n.str(ctx, R.string.data_section_trash),
+                        trashValue
                     ) {
                         dismiss()
                         actions.onOpenTrash()
@@ -99,12 +137,15 @@ object DataSheet {
                 )
 
                 // ---- 勋章 ----
-                body.addView(SheetKit.sectionTitle(ctx, theme, "里程碑勋章"))
+                body.addView(SheetKit.sectionTitle(ctx, theme, L10n.str(ctx, R.string.data_section_badges)))
                 body.addView(
                     SheetKit.entryRow(
                         ctx, theme,
-                        "里程碑勋章",
-                        "已点亮 " + cur.badgeCount + " / " + com.deviceledger.app.model.Badges.ALL.size
+                        L10n.str(ctx, R.string.data_section_badges),
+                        L10n.str(
+                            ctx, R.string.data_badges_row,
+                            cur.badgeCount.toString(), com.deviceledger.app.model.Badges.ALL.size.toString()
+                        )
                     ) {
                         dismiss()
                         actions.onOpenBadges()

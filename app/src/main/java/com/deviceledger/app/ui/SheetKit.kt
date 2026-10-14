@@ -191,7 +191,14 @@ object SheetKit {
         t.text = title
         t.setTextColor(theme.text)
         t.textSize = 13.5f
-        t.layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        // 英文/日文下标题与值都可能比四个汉字长得多：标题按自然宽度排，
+        // 超出整行时省略号收尾，绝不把箭头挤出屏幕
+        t.maxLines = 1
+        t.ellipsize = android.text.TextUtils.TruncateAt.END
+        t.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
         row.addView(t)
 
         if (value.isNotEmpty()) {
@@ -199,6 +206,11 @@ object SheetKit {
             v.text = value
             v.setTextColor(theme.sub)
             v.textSize = 12f
+            // 值列吃掉标题与箭头之外的剩余宽度：放不下就省略号，而不是撑爆这一行
+            v.maxLines = 1
+            v.ellipsize = android.text.TextUtils.TruncateAt.END
+            v.gravity = Gravity.END
+            v.layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             row.addView(v)
         }
 

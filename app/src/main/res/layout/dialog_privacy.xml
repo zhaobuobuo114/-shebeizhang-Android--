@@ -6,6 +6,12 @@
     android:clickable="true"
     android:focusable="true">
 
+    <!-- 卡片 wrap_content + 正文区 0dp/weight=1：
+         文字短时卡片收紧（早先钉成 match_parent 会在勾选框和按钮之间留一大片空白），
+         文字长到超过屏幕时，带权重的那个子 View 会被压缩，正文自己滚动，
+         两个按钮始终钉在卡片底部可见——英文/日文的 privacy_body 比中文长得多，
+         而弹框不可点外关闭，按钮被顶出屏幕就等于死锁。
+         PrivacyGate 在 show 后只改 lp.width（340dp 上限），与这里的高度策略互不干扰 -->
     <LinearLayout
         android:id="@+id/privacyCard"
         android:layout_width="match_parent"
@@ -13,67 +19,84 @@
         android:layout_gravity="center"
         android:layout_marginStart="24dp"
         android:layout_marginEnd="24dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="24dp"
         android:orientation="vertical"
         android:paddingStart="22dp"
         android:paddingEnd="22dp"
         android:paddingTop="24dp"
         android:paddingBottom="18dp">
 
-        <TextView
-            android:id="@+id/privacyTitle"
+        <ScrollView
+            android:id="@+id/privacyScroll"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/privacy_title"
-            android:textSize="19sp"
-            android:textStyle="bold" />
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:overScrollMode="never"
+            android:scrollbars="none">
 
-        <TextView
-            android:id="@+id/privacyBody"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:lineSpacingExtra="3dp"
-            android:text="@string/privacy_body"
-            android:textSize="14sp" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            android:orientation="horizontal">
-
-            <TextView
-                android:id="@+id/privacyLinkPolicy"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp"
-                android:text="@string/privacy_link_policy"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/privacyLinkTerms"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="20dp"
-                android:paddingTop="4dp"
-                android:paddingBottom="4dp"
-                android:text="@string/privacy_link_terms"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/privacyTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/privacy_title"
+                    android:textSize="19sp"
+                    android:textStyle="bold" />
 
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/privacyBody"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:lineSpacingExtra="3dp"
+                    android:text="@string/privacy_body"
+                    android:textSize="14sp" />
 
-        <CheckBox
-            android:id="@+id/privacyCheck"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:minHeight="34dp"
-            android:paddingStart="6dp"
-            android:text="@string/privacy_check"
-            android:textSize="14sp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:orientation="horizontal">
+
+                    <TextView
+                        android:id="@+id/privacyLinkPolicy"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp"
+                        android:text="@string/privacy_link_policy"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/privacyLinkTerms"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="20dp"
+                        android:paddingTop="4dp"
+                        android:paddingBottom="4dp"
+                        android:text="@string/privacy_link_terms"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <CheckBox
+                    android:id="@+id/privacyCheck"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:minHeight="34dp"
+                    android:paddingStart="6dp"
+                    android:text="@string/privacy_check"
+                    android:textSize="14sp" />
+            </LinearLayout>
+        </ScrollView>
 
         <TextView
             android:id="@+id/privacyAgree"

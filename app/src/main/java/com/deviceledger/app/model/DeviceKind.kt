@@ -1,15 +1,21 @@
 package com.deviceledger.app.model
 
+import android.content.Context
+
 import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import com.deviceledger.app.R
 
 /**
- * 设备类型表：key 为存储用标识，label 为展示名，colorHex 为图表 / 标签主题色。
+ * 设备类型表：key 为存储用标识，labelRes 为展示名的字符串资源，colorHex 为图表 / 标签主题色。
  * 每个 key 对应一张 Q 版图标（res/drawable-nodpi/dev_<key>.png）。
+ *
+ * v2.0.0 起展示名进资源表（四种语言），但 **key 恒为 ASCII 且绝不翻译**：
+ * 它写进 SharedPreferences 与导出文件，另一端靠它认类型。
  */
 data class DeviceKind(
     val key: String,
-    val label: String,
+    @field:StringRes val labelRes: Int,
     val colorHex: String
 )
 
@@ -25,47 +31,47 @@ private val LEGACY_MAP: Map<String, String> = mapOf(
 )
 
 val DEVICE_KINDS: List<DeviceKind> = listOf(
-    DeviceKind("phone", "手机", "#4F8CFF"),
-    DeviceKind("laptop", "笔记本", "#6C7BFF"),
-    DeviceKind("tablet", "平板", "#38BDF8"),
-    DeviceKind("desktop", "台式主机", "#64748B"),
-    DeviceKind("monitor", "显示器", "#14B8A6"),
-    DeviceKind("tv", "电视", "#F59E0B"),
-    DeviceKind("projector", "投影仪", "#8B5CF6"),
-    DeviceKind("camera", "相机", "#EF4444"),
-    DeviceKind("actioncam", "运动相机", "#FB923C"),
-    DeviceKind("drone", "无人机", "#22C55E"),
-    DeviceKind("headphone", "头戴耳机", "#A855F7"),
-    DeviceKind("earbuds", "蓝牙耳机", "#EC4899"),
-    DeviceKind("speaker", "音箱", "#F43F5E"),
-    DeviceKind("smartspeaker", "智能音箱", "#06B6D4"),
-    DeviceKind("mic", "麦克风", "#84CC16"),
-    DeviceKind("watch", "智能手表", "#10B981"),
-    DeviceKind("band", "智能手环", "#2DD4BF"),
-    DeviceKind("vr", "VR 眼镜", "#7C3AED"),
-    DeviceKind("console", "游戏主机", "#334155"),
-    DeviceKind("handheld", "掌上游戏机", "#DB2777"),
-    DeviceKind("keyboard", "键盘", "#475569"),
-    DeviceKind("mouse", "鼠标", "#94A3B8"),
-    DeviceKind("drawing", "数位板", "#0891B2"),
-    DeviceKind("stylus", "手写笔", "#FBBF24"),
-    DeviceKind("printer", "打印机", "#0F766E"),
-    DeviceKind("router", "路由器", "#2563EB"),
-    DeviceKind("nas", "硬盘 / 存储", "#A5B4FC"),
-    DeviceKind("powerbank", "充电宝", "#FACC15"),
-    DeviceKind("charger", "充电器", "#F87171"),
-    DeviceKind("fridge", "冰箱", "#93C5FD"),
-    DeviceKind("washer", "洗衣机", "#67E8F9"),
-    DeviceKind("ac", "空调", "#2E9BD6"),
-    DeviceKind("microwave", "微波炉", "#FDBA74"),
-    DeviceKind("fan", "风扇", "#5EEAD4"),
-    DeviceKind("robot", "扫地机器人", "#C4B5FD"),
-    DeviceKind("ereader", "电纸书", "#A8A29E"),
-    DeviceKind("hairdryer", "吹风机", "#FB7185"),
-    DeviceKind("toothbrush", "电动牙刷", "#4ADE80"),
-    DeviceKind("shaver", "剃须刀", "#60A5FA"),
-    DeviceKind("gamepad", "游戏手柄", "#9333EA"),
-    DeviceKind("other", "其他", "#9CA3AF")
+    DeviceKind("phone", R.string.kind_phone, "#4F8CFF"),
+    DeviceKind("laptop", R.string.kind_laptop, "#6C7BFF"),
+    DeviceKind("tablet", R.string.kind_tablet, "#38BDF8"),
+    DeviceKind("desktop", R.string.kind_desktop, "#64748B"),
+    DeviceKind("monitor", R.string.kind_monitor, "#14B8A6"),
+    DeviceKind("tv", R.string.kind_tv, "#F59E0B"),
+    DeviceKind("projector", R.string.kind_projector, "#8B5CF6"),
+    DeviceKind("camera", R.string.kind_camera, "#EF4444"),
+    DeviceKind("actioncam", R.string.kind_actioncam, "#FB923C"),
+    DeviceKind("drone", R.string.kind_drone, "#22C55E"),
+    DeviceKind("headphone", R.string.kind_headphone, "#A855F7"),
+    DeviceKind("earbuds", R.string.kind_earbuds, "#EC4899"),
+    DeviceKind("speaker", R.string.kind_speaker, "#F43F5E"),
+    DeviceKind("smartspeaker", R.string.kind_smartspeaker, "#06B6D4"),
+    DeviceKind("mic", R.string.kind_mic, "#84CC16"),
+    DeviceKind("watch", R.string.kind_watch, "#10B981"),
+    DeviceKind("band", R.string.kind_band, "#2DD4BF"),
+    DeviceKind("vr", R.string.kind_vr, "#7C3AED"),
+    DeviceKind("console", R.string.kind_console, "#334155"),
+    DeviceKind("handheld", R.string.kind_handheld, "#DB2777"),
+    DeviceKind("keyboard", R.string.kind_keyboard, "#475569"),
+    DeviceKind("mouse", R.string.kind_mouse, "#94A3B8"),
+    DeviceKind("drawing", R.string.kind_drawing, "#0891B2"),
+    DeviceKind("stylus", R.string.kind_stylus, "#FBBF24"),
+    DeviceKind("printer", R.string.kind_printer, "#0F766E"),
+    DeviceKind("router", R.string.kind_router, "#2563EB"),
+    DeviceKind("nas", R.string.kind_nas, "#A5B4FC"),
+    DeviceKind("powerbank", R.string.kind_powerbank, "#FACC15"),
+    DeviceKind("charger", R.string.kind_charger, "#F87171"),
+    DeviceKind("fridge", R.string.kind_fridge, "#93C5FD"),
+    DeviceKind("washer", R.string.kind_washer, "#67E8F9"),
+    DeviceKind("ac", R.string.kind_ac, "#2E9BD6"),
+    DeviceKind("microwave", R.string.kind_microwave, "#FDBA74"),
+    DeviceKind("fan", R.string.kind_fan, "#5EEAD4"),
+    DeviceKind("robot", R.string.kind_robot, "#C4B5FD"),
+    DeviceKind("ereader", R.string.kind_ereader, "#A8A29E"),
+    DeviceKind("hairdryer", R.string.kind_hairdryer, "#FB7185"),
+    DeviceKind("toothbrush", R.string.kind_toothbrush, "#4ADE80"),
+    DeviceKind("shaver", R.string.kind_shaver, "#60A5FA"),
+    DeviceKind("gamepad", R.string.kind_gamepad, "#9333EA"),
+    DeviceKind("other", R.string.kind_other, "#9CA3AF")
 )
 
 /** 判断是否为合法的类型 key */
@@ -92,7 +98,7 @@ fun findKind(key: String): DeviceKind {
     return DEVICE_KINDS[DEVICE_KINDS.size - 1]
 }
 
-fun kindLabel(key: String): String = findKind(key).label
+fun kindLabel(context: Context, key: String): String = context.getString(findKind(key).labelRes)
 
 fun kindColorHex(key: String): String = findKind(key).colorHex
 

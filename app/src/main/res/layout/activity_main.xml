@@ -47,7 +47,7 @@
                             android:id="@+id/tvTitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="设备账"
+                            android:text="@string/app_name"
                             android:textSize="24sp"
                             android:textStyle="bold" />
 
@@ -56,7 +56,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="3dp"
-                            android:text="买了多久 · 花了多少 · 每天多少钱"
+                            android:text="@string/top_slogan"
                             android:textSize="12sp" />
                     </LinearLayout>
 
@@ -72,7 +72,7 @@
                             android:layout_width="20dp"
                             android:layout_height="20dp"
                             android:layout_gravity="center"
-                            android:contentDescription="数据与备份"
+                            android:contentDescription="@string/cd_hub"
                             android:src="@drawable/ic_more" />
                     </FrameLayout>
 
@@ -86,7 +86,7 @@
                             android:layout_width="22dp"
                             android:layout_height="22dp"
                             android:layout_gravity="center"
-                            android:contentDescription="切换昼夜模式"
+                            android:contentDescription="@string/cd_theme"
                             android:src="@drawable/ic_sun" />
                     </FrameLayout>
 
@@ -98,7 +98,7 @@
                         android:gravity="center"
                         android:paddingLeft="16dp"
                         android:paddingRight="16dp"
-                        android:text="＋ 记一笔"
+                        android:text="@string/top_add"
                         android:textColor="#FFFFFF"
                         android:textSize="14sp" />
                 </LinearLayout>
@@ -139,12 +139,14 @@
                             android:gravity="center_vertical"
                             android:orientation="horizontal">
 
+                            <!-- 文案已接入资源；右侧 tvCountBadge 的「0 台在册」是复数占位，
+                                 XML 引用不了 plurals，保留原样由 Kotlin 覆盖 -->
                             <TextView
                                 android:id="@+id/tvSummaryLabel"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="设备总投入"
+                                android:text="@string/sum_total_label"
                                 android:textSize="12sp" />
 
                             <TextView
@@ -156,7 +158,7 @@
                                 android:paddingRight="9dp"
                                 android:paddingTop="3dp"
                                 android:paddingBottom="3dp"
-                                android:text="0 台在册"
+                                android:text="0"
                                 android:textColor="#FFFFFF"
                                 android:textSize="11sp" />
                         </LinearLayout>
@@ -184,7 +186,7 @@
                                 android:id="@+id/tvAvgLabel"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="日均合计"
+                                android:text="@string/sum_avg_label"
                                 android:textSize="12sp" />
 
                             <TextView
@@ -214,7 +216,7 @@
                                 android:paddingRight="7dp"
                                 android:paddingTop="2dp"
                                 android:paddingBottom="2dp"
-                                android:text="最划算"
+                                android:text="@string/sum_best_label"
                                 android:textColor="#FFFFFF"
                                 android:textSize="11sp" />
 
@@ -247,7 +249,7 @@
                         android:layout_gravity="end|top"
                         android:layout_marginTop="58dp"
                         android:layout_marginEnd="18dp"
-                        android:contentDescription="里程碑勋章"
+                        android:contentDescription="@string/cd_badges"
                         android:focusable="true"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
@@ -270,7 +272,6 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="5dp"
                             android:includeFontPadding="false"
-                            android:text="0 / 14"
                             android:textSize="11sp" />
 
                         <TextView
@@ -304,33 +305,46 @@
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
-                        <TextView
-                            android:id="@+id/tvChartTitle"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="支出构成"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/tvChartSub"
+                        <!-- 标题与副标题竖着叠放，给右侧三枚胶囊腾出横向空间：
+                             英文文案变长后，五个元素再挤一行会把胶囊顶出右边缘 -->
+                        <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginLeft="8dp"
                             android:layout_weight="1"
-                            android:text="按设备类型"
-                            android:textSize="11sp" />
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/tvChartTitle"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:text="@string/chart_title"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvChartSub"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="1dp"
+                                android:ellipsize="end"
+                                android:maxLines="1"
+                                android:text="@string/chart_sub"
+                                android:textSize="11sp" />
+                        </LinearLayout>
 
                         <TextView
                             android:id="@+id/btnByAmount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginLeft="6dp"
                             android:gravity="center"
                             android:paddingLeft="10dp"
                             android:paddingRight="10dp"
                             android:paddingTop="4dp"
                             android:paddingBottom="4dp"
-                            android:text="按金额"
+                            android:text="@string/chart_by_amount"
                             android:textSize="11sp" />
 
                         <TextView
@@ -343,7 +357,7 @@
                             android:paddingRight="10dp"
                             android:paddingTop="4dp"
                             android:paddingBottom="4dp"
-                            android:text="按台数"
+                            android:text="@string/chart_by_count"
                             android:textSize="11sp" />
 
                         <TextView
@@ -351,7 +365,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginLeft="10dp"
-                            android:text="收起"
+                            android:text="@string/chart_collapse"
                             android:textSize="11sp" />
                     </LinearLayout>
 
@@ -410,7 +424,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginRight="3dp"
-                            android:text="排序"
+                            android:text="@string/sort_label"
                             android:textSize="12sp" />
 
                         <!-- 正序 / 倒序：两枚自绘的实心小三角，当前方向的那一个点亮。
@@ -464,7 +478,7 @@
                                 android:paddingRight="11dp"
                                 android:paddingTop="5dp"
                                 android:paddingBottom="5dp"
-                                android:text="★ 收藏"
+                                android:text="@string/sort_fav"
                                 android:textSize="12sp" />
 
                             <TextView
@@ -477,7 +491,7 @@
                                 android:paddingRight="11dp"
                                 android:paddingTop="5dp"
                                 android:paddingBottom="5dp"
-                                android:text="日均最高"
+                                android:text="@string/sort_avg_desc"
                                 android:textSize="12sp" />
 
                             <TextView
@@ -490,7 +504,7 @@
                                 android:paddingRight="11dp"
                                 android:paddingTop="5dp"
                                 android:paddingBottom="5dp"
-                                android:text="价格最高"
+                                android:text="@string/sort_price_desc"
                                 android:textSize="12sp" />
 
                             <TextView
@@ -503,7 +517,7 @@
                                 android:paddingRight="11dp"
                                 android:paddingTop="5dp"
                                 android:paddingBottom="5dp"
-                                android:text="最近购买"
+                                android:text="@string/sort_date_desc"
                                 android:textSize="12sp" />
 
                             <TextView
@@ -516,7 +530,7 @@
                                 android:paddingRight="11dp"
                                 android:paddingTop="5dp"
                                 android:paddingBottom="5dp"
-                                android:text="用最久"
+                                android:text="@string/sort_days_desc"
                                 android:textSize="12sp" />
                         </LinearLayout>
                     </HorizontalScrollView>
@@ -539,10 +553,13 @@
                         android:paddingBottom="20dp"
                         android:scrollbars="none" />
 
+                    <!-- 高度改为自适应 + 330dp 下限：英文/日文文案换行变长时不再被固定高度裁掉，
+                         中文短文案下观感与原来一致 -->
                     <LinearLayout
                         android:id="@+id/emptyState"
                         android:layout_width="match_parent"
-                        android:layout_height="330dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="330dp"
                         android:gravity="center"
                         android:orientation="vertical"
                         android:visibility="gone">
@@ -551,7 +568,7 @@
                             android:id="@+id/ivEmpty"
                             android:layout_width="120dp"
                             android:layout_height="120dp"
-                            android:contentDescription="空状态"
+                            android:contentDescription="@string/cd_empty"
                             android:src="@drawable/ic_empty" />
 
                         <TextView
@@ -559,7 +576,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
-                            android:text="还没有设备记录"
+                            android:gravity="center"
+                            android:text="@string/empty_all_title"
                             android:textSize="16sp"
                             android:textStyle="bold" />
 
@@ -568,7 +586,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
-                            android:text="记下第一台设备的购买日期和价格，"
+                            android:gravity="center"
+                            android:text="@string/empty_all_desc1"
                             android:textSize="13sp" />
 
                         <TextView
@@ -576,7 +595,8 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:text="它会告诉你这台设备每天花了多少钱。"
+                            android:gravity="center"
+                            android:text="@string/empty_all_desc2"
                             android:textSize="13sp" />
 
                         <TextView
@@ -587,11 +607,25 @@
                             android:gravity="center"
                             android:paddingLeft="26dp"
                             android:paddingRight="26dp"
-                            android:text="添加设备"
+                            android:text="@string/empty_all_action"
                             android:textColor="#FFFFFF"
                             android:textSize="15sp" />
                     </LinearLayout>
                 </FrameLayout>
+
+                <!-- 页脚：作者的 GitHub。整页最底部（列表与空态都在它上面），
+                     跟着 NestedScrollView 一起滚，不钉屏幕。文案与颜色在
+                     renderStaticTexts() / applyTheme() 里给，切语言会重取。 -->
+                <TextView
+                    android:id="@+id/tvGithub"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginBottom="20dp"
+                    android:gravity="center"
+                    android:paddingTop="10dp"
+                    android:paddingBottom="10dp"
+                    android:textSize="12sp" />
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
     </LinearLayout>
@@ -622,10 +656,13 @@
             android:paddingTop="9dp"
             android:paddingBottom="9dp">
 
+            <!-- 三段文本各占 0dp+weight=1 平分剩余宽度，英文变长时靠 ellipsize 收尾，
+                 不会再互相挤出右边缘 -->
             <TextView
                 android:id="@+id/tvStickyTotal"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_weight="1"
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:text="¥0"
@@ -641,9 +678,12 @@
 
             <TextView
                 android:id="@+id/tvStickyCount"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="0 台"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="0"
                 android:textSize="12sp" />
 
             <View
@@ -655,9 +695,12 @@
 
             <TextView
                 android:id="@+id/tvStickyAvg"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="日均 ¥0"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="¥0"
                 android:textSize="13sp"
                 android:textStyle="bold" />
         </LinearLayout>
@@ -688,7 +731,7 @@
             android:layout_width="20dp"
             android:layout_height="20dp"
             android:layout_gravity="center"
-            android:contentDescription="回到顶部"
+            android:contentDescription="@string/cd_top"
             android:src="@drawable/ic_top" />
 
         <!-- 起飞的那枚箭头：从圆钮里往外送出去，落定的一枚紧跟其后从下方补回 -->
@@ -736,7 +779,7 @@
             android:gravity="center"
             android:paddingLeft="14dp"
             android:paddingRight="14dp"
-            android:text="撤销"
+            android:text="@string/undo_button"
             android:textSize="13sp"
             android:textStyle="bold" />
     </LinearLayout>
@@ -785,7 +828,7 @@
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="添加设备"
+                        android:text="@string/editor_title_add"
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
@@ -797,7 +840,7 @@
                         android:paddingRight="6dp"
                         android:paddingTop="4dp"
                         android:paddingBottom="4dp"
-                        android:text="关闭"
+                        android:text="@string/editor_close"
                         android:textSize="14sp" />
                 </LinearLayout>
 
@@ -821,7 +864,7 @@
                             android:id="@+id/tvLabelName"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="设备名称"
+                            android:text="@string/editor_name_label"
                             android:textSize="12sp" />
 
                         <EditText
@@ -830,7 +873,7 @@
                             android:layout_height="46dp"
                             android:layout_marginTop="6dp"
                             android:background="@null"
-                            android:hint="例如：MacBook Pro 14"
+                            android:hint="@string/editor_name_hint"
                             android:imeOptions="actionNext"
                             android:inputType="text"
                             android:maxLines="1"
@@ -839,12 +882,13 @@
                             android:singleLine="true"
                             android:textSize="15sp" />
 
+                        <!-- 「购买价格（元）」的键 editor_price_label 带 {0} 货币单位参数，
+                             XML 无法引用，占位文本由 Kotlin 在运行时填充 -->
                         <TextView
                             android:id="@+id/tvLabelPrice"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="16dp"
-                            android:text="购买价格（元）"
                             android:textSize="12sp" />
 
                         <EditText
@@ -853,7 +897,7 @@
                             android:layout_height="46dp"
                             android:layout_marginTop="6dp"
                             android:background="@null"
-                            android:hint="0.00"
+                            android:hint="@string/editor_price_hint"
                             android:imeOptions="actionNext"
                             android:inputType="numberDecimal"
                             android:maxLines="1"
@@ -867,7 +911,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="16dp"
-                            android:text="设备类型"
+                            android:text="@string/editor_kind_label"
                             android:textSize="12sp" />
 
                         <!-- 与鸿蒙的 FlexWrap 一致：固定 60x60 格子，排满一行自动换行；默认只铺一行 -->
@@ -886,11 +930,12 @@
                             android:paddingTop="4dp"
                             android:paddingBottom="2dp">
 
+                            <!-- 「展开全部 41 类」把 DEVICE_KINDS.size 写死在了 XML 里，且键 editor_kind_expand
+                                 带 {0} 参数无法引用；文本由 renderKindToggle 在运行时覆盖，这里留空占位 -->
                             <TextView
                                 android:id="@+id/tvKindMore"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="展开全部 41 类"
                                 android:textSize="12sp" />
 
                             <TextView
@@ -907,7 +952,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
-                            android:text="购买日期"
+                            android:text="@string/editor_date_label"
                             android:textSize="12sp" />
 
                         <TextView
@@ -927,7 +972,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="16dp"
-                            android:text="备注（可选）"
+                            android:text="@string/editor_note_label"
                             android:textSize="12sp" />
 
                         <EditText
@@ -937,7 +982,7 @@
                             android:layout_marginTop="6dp"
                             android:background="@null"
                             android:gravity="top"
-                            android:hint="保修到什么时候、配件花了多少……"
+                            android:hint="@string/editor_note_hint"
                             android:inputType="textMultiLine"
                             android:maxLines="4"
                             android:paddingLeft="14dp"
@@ -961,7 +1006,7 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
-                                android:text="收藏为最爱"
+                                android:text="@string/editor_fav_label"
                                 android:textSize="14sp" />
 
                             <TextView
@@ -969,14 +1014,14 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginRight="6dp"
-                                android:text="未收藏"
+                                android:text="@string/editor_fav_off"
                                 android:textSize="12sp" />
 
                             <ImageView
                                 android:id="@+id/ivFavSwitch"
                                 android:layout_width="22dp"
                                 android:layout_height="22dp"
-                                android:contentDescription="收藏开关"
+                                android:contentDescription="@string/cd_favorite_toggle"
                                 android:src="@drawable/ic_star_off" />
                         </LinearLayout>
 
@@ -1011,7 +1056,7 @@
                         android:layout_height="46dp"
                         android:layout_weight="1"
                         android:gravity="center"
-                        android:text="取消"
+                        android:text="@string/editor_cancel"
                         android:textSize="15sp" />
 
                     <TextView
@@ -1021,7 +1066,7 @@
                         android:layout_marginLeft="12dp"
                         android:layout_weight="1"
                         android:gravity="center"
-                        android:text="保存"
+                        android:text="@string/editor_save"
                         android:textColor="#FFFFFF"
                         android:textSize="15sp" />
                 </LinearLayout>
@@ -1050,7 +1095,7 @@
                 android:id="@+id/tvConfirmTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="确定删除这台设备？"
+                android:text="@string/delete_title"
                 android:textSize="17sp"
                 android:textStyle="bold" />
 
@@ -1073,7 +1118,7 @@
                     android:layout_height="44dp"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:text="取消"
+                    android:text="@string/delete_cancel"
                     android:textSize="15sp" />
 
                 <TextView
@@ -1083,7 +1128,7 @@
                     android:layout_marginLeft="12dp"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:text="删除"
+                    android:text="@string/delete_confirm"
                     android:textColor="#FFFFFF"
                     android:textSize="15sp" />
             </LinearLayout>

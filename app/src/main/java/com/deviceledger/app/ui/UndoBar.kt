@@ -27,6 +27,20 @@ class UndoBar(
     private var pending: Runnable? = null
     private var shown = false
 
+    /** 正在显示：切语言时要不要重取文案，就看这个 */
+    val isShown: Boolean
+        get() = shown
+
+    /**
+     * 只换字，不重启动画、不延长停留时间。
+     *
+     * 撤销条的文案是 show() 那一刻定型的，驻留 5 秒；这期间用户进「⋯」面板换了语言，
+     * 整条提示就会一直留着旧语言（删除后立刻切语言是条很顺的路径）。
+     */
+    fun retext(message: String) {
+        text.text = message
+    }
+
     fun applyTheme(theme: AppTheme) {
         val density = bar.resources.displayMetrics.density
         bar.background = borderedDrawable(theme.card, 14f, theme.line, 1f, density)

@@ -16,6 +16,7 @@ import com.deviceledger.app.model.kindIconRes
 import com.deviceledger.app.model.kindLabel
 import com.deviceledger.app.util.DateUtil
 import com.deviceledger.app.util.Fmt
+import com.deviceledger.app.util.L10n
 
 /** 设备列表适配器：卡片内容 + 错峰入场动画 */
 class DeviceAdapter(
@@ -72,6 +73,19 @@ class DeviceAdapter(
         items.clear()
         items.addAll(list)
         diff.dispatchUpdatesTo(this)
+    }
+
+    /**
+     * 换语言时强制重绑一次。
+     *
+     * 卡片上的类型名、"已用 N 天"、日期都是绑定时现取的，而 DiffUtil 比的是设备数据本身、
+     * 不含语言，所以切完语言列表会安安静静地留着上一门语言（实测就是界面已是日语、
+     * 卡片还写着"筆記型電腦"）。这里必须显式重绑。
+     * 只在用户主动切语言时调用：那一刻列表是静止的，pendingEnter 也是空的，
+     * 硬重绑不会打断入场或位移动画。
+     */
+    fun rebindTexts() {
+        notifyDataSetChanged()
     }
 
     /**
@@ -155,6 +169,7 @@ class DeviceAdapter(
 
         fun bind(item: DeviceItem, theme: AppTheme) {
             resetTransform()
+            val c = itemView.context
 
             cardRoot.background = roundedDrawable(theme.card, 18f, density)
             ViewCompat.setElevation(cardRoot, 3f * density)
@@ -163,25 +178,34 @@ class DeviceAdapter(
             val tintColor = android.graphics.Color.parseColor(Fmt.tint(colorHex, "22"))
             iconBg.background = roundedDrawable(tintColor, 17f, density)
             ivIcon.setImageResource(kindIconRes(item.category))
+            // XML 里的 contentDescription 是 inflate 那一刻定型的，而我们不重建 Activity：
+            // 不在这里重设，切完语言读屏软件念出来的还是上一门语言（新出现的卡片才是新的）
+            ivIcon.contentDescription = L10n.str(c, R.string.cd_device_icon)
+            ivStar.contentDescription = L10n.str(c, R.string.cd_favorite)
 
             tvName.text = item.name
             tvName.setTextColor(theme.text)
-            tvPrice.text = "¥" + Fmt.money(item.price)
+            tvPrice.text = Fmt.moneyLabel(c, item.price)
             tvPrice.setTextColor(theme.text)
 
-            tvKind.text = kindLabel(item.category)
+            tvKind.text = kindLabel(c, item.category)
             tvKind.setTextColor(android.graphics.Color.parseColor(colorHex))
             tvKind.background = roundedDrawable(tintColor, 5f, density)
 
-            tvDate.text = item.buyDate
+            tvDate.text = DateUtil.displayDate(c, item.buyDate)
             tvDate.setTextColor(theme.sub)
 
             val days = DeviceCalc.daysUsed(item)
-            tvDays.text = "已用 " + days + " 天 · " + DateUtil.humanDays(days)
+            tvDays.text = L10n.str(
+                c, R.string.card_used_days,
+                L10n.quantity(c, R.plurals.p_days, days, days.toString()),
+                DateUtil.humanDays(c, days)
+            )
             tvDays.setTextColor(theme.sub)
 
+            tvAvgLabel.setText(R.string.card_avg_label)
             tvAvgLabel.setTextColor(theme.sub)
-            tvAvg.text = "¥" + Fmt.smallMoney(DeviceCalc.avgPerDay(item))
+            tvAvg.text = Fmt.smallMoneyLabel(c, DeviceCalc.avgPerDay(item))
             tvAvg.setTextColor(theme.accent)
 
             // 备注一直参与布局（为空时只是不显示字），这样星标总能被顶到最右边

@@ -8,9 +8,10 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.deviceledger.app.R
 import com.deviceledger.app.model.BadgeDef
 import com.deviceledger.app.model.Badges
-import com.deviceledger.app.util.DateUtil
+import com.deviceledger.app.util.L10n
 
 /**
  * 勋章墙：14 枚里程碑勋章，达成的点亮并显示获得日期，没达成的置灰并写清条件。
@@ -28,14 +29,16 @@ object BadgeWall {
         state: () -> Map<String, Long>
     ): Dialog {
         val ctx = activity
-        return SheetKit.show(activity, theme, "里程碑勋章") { body, _ ->
+        return SheetKit.show(activity, theme, L10n.str(ctx, R.string.badge_wall_title)) { body, _ ->
             val map = state()
             body.addView(
                 SheetKit.note(
                     ctx, theme,
-                    "已点亮 " + map.size + " / " + Badges.ALL.size +
-                        " · 达成后一直保留，即便数字回落也不会熄灭。"
+                    L10n.str(ctx, R.string.badge_wall_progress, map.size.toString(), Badges.ALL.size.toString())
                 )
+            )
+            body.addView(
+                SheetKit.note(ctx, theme, L10n.str(ctx, R.string.badge_wall_keep))
             )
 
             var index = 0
@@ -115,20 +118,28 @@ object BadgeWall {
         host.addView(badge)
 
         val name = TextView(ctx)
-        name.text = def.name
+        name.text = ctx.getString(def.nameRes)
         name.textSize = 12f
         name.gravity = Gravity.CENTER
         name.setTextColor(if (on) theme.text else theme.sub)
-        name.setSingleLine(true)
+        // 英文勋章名（"Three Year Club" / "Kind Collector"）在 ~90dp 格子里一行放不下：
+        // 原先 setSingleLine 又没设 ellipsize，尾巴是被硬裁掉的。与鸿蒙侧同规则（两行 + 省略号）。
+        name.maxLines = 2
+        name.ellipsize = android.text.TextUtils.TruncateAt.END
         host.addView(name)
 
         val sub = TextView(ctx)
-        sub.text = if (on) DateUtil.formatStamp(at) + " 达成" else def.desc
+        sub.text = if (on) {
+            L10n.str(ctx, R.string.badge_unlocked_at, Badges.dateText(ctx, at))
+        } else {
+            ctx.getString(def.descRes)
+        }
         sub.textSize = 10.5f
         sub.gravity = Gravity.CENTER
         sub.setTextColor(if (on) theme.primary else theme.sub)
         sub.alpha = if (on) 1f else 0.8f
-        sub.maxLines = 2
+        sub.maxLines = 3
+        sub.ellipsize = android.text.TextUtils.TruncateAt.END
         sub.setLineSpacing(SheetKit.dp(ctx, 1f).toFloat(), 1f)
         val sparams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,

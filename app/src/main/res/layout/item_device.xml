@@ -20,7 +20,7 @@
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:layout_gravity="center"
-            android:contentDescription="设备图标" />
+            android:contentDescription="@string/cd_device_icon" />
     </FrameLayout>
 
     <LinearLayout
@@ -62,10 +62,18 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
+            <!-- 类型标签：英文能到 13~14 个字符（Smart speaker / Drawing tablet），
+                 原先它按自然宽度先占，把右边"已用 N 天 · M 年"整句挤到 0 宽——
+                 而那半句才是这张卡的信息量所在。鸿蒙端的优先级是反的
+                 （标签 flexShrink、天数 layoutWeight(1)），这里向它对齐：
+                 标签最多占 7 em，超了就省略号。 -->
             <TextView
                 android:id="@+id/tvKind"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxEms="7"
+                android:maxLines="1"
                 android:paddingLeft="6dp"
                 android:paddingRight="6dp"
                 android:paddingTop="2dp"
@@ -77,6 +85,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginLeft="8dp"
+                android:ellipsize="end"
+                android:maxLines="1"
                 android:textSize="12sp" />
 
             <TextView
@@ -101,7 +111,7 @@
                 android:id="@+id/tvAvgLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="日均"
+                android:text="@string/card_avg_label"
                 android:textSize="12sp" />
 
             <TextView
@@ -133,7 +143,7 @@
                     android:layout_width="19dp"
                     android:layout_height="19dp"
                     android:layout_gravity="center"
-                    android:contentDescription="收藏"
+                    android:contentDescription="@string/cd_favorite"
                     android:src="@drawable/ic_star_off" />
             </FrameLayout>
         </LinearLayout>

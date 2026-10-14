@@ -1,5 +1,8 @@
 package com.deviceledger.app.model
 
+import android.content.Context
+import com.deviceledger.app.R
+
 /** 扇形图的一段 */
 data class PieSlice(
     val n: String,   // 名称
@@ -12,8 +15,8 @@ private const val MAX_SLICE = 6
 
 object ChartData {
 
-    /** 按设备类型聚合。byAmount = true 按金额，false 按台数 */
-    fun slices(list: List<DeviceItem>, byAmount: Boolean): List<PieSlice> {
+    /** 按设备类型聚合。byAmount = true 按金额，false 按台数。名称取展示资源，需要 Context */
+    fun slices(context: Context, list: List<DeviceItem>, byAmount: Boolean): List<PieSlice> {
         val keys = ArrayList<String>()
         val vals = ArrayList<Double>()
 
@@ -32,7 +35,7 @@ object ChartData {
         val out = ArrayList<PieSlice>()
         for (i in keys.indices) {
             val kd = findKind(keys[i])
-            out.add(PieSlice(kd.label, vals[i], kd.colorHex))
+            out.add(PieSlice(context.getString(kd.labelRes), vals[i], kd.colorHex))
         }
         // 与鸿蒙版一致：只按数值降序，不做二次排序
         out.sortWith(compareByDescending<PieSlice> { it.v })
@@ -43,7 +46,7 @@ object ChartData {
                 rest += out[i].v
             }
             val head = ArrayList<PieSlice>(out.subList(0, MAX_SLICE - 1))
-            head.add(PieSlice("其他", rest, "#9CA3AF"))
+            head.add(PieSlice(context.getString(R.string.kind_other), rest, "#9CA3AF"))
             return head
         }
         return out

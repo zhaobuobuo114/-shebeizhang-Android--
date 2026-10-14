@@ -22,6 +22,7 @@ object DeviceStore {
     private const val KEY_BADGE = "badge_state"
     private const val KEY_BACKUP_SLOT = "backup_slot"
     private const val KEY_BACKUP_AT = "backup_at"
+    private const val KEY_LANGUAGE = "app_language"
 
     private var prefs: SharedPreferences? = null
 
@@ -102,6 +103,28 @@ object DeviceStore {
         val sp = prefs ?: return
         try {
             sp.edit().putBoolean(KEY_DARK, dark).apply()
+        } catch (e: Exception) {
+            // ignore
+        }
+    }
+
+    /**
+     * 界面语言：`system` 或四种 tag 之一。
+     * 默认跟随系统——升级到老版本装过的应用时，用户看到的仍是原来那份中文（系统为中文时）。
+     */
+    fun loadLanguage(): String {
+        val sp = prefs ?: return L10n.FOLLOW_SYSTEM
+        return try {
+            sp.getString(KEY_LANGUAGE, L10n.FOLLOW_SYSTEM) ?: L10n.FOLLOW_SYSTEM
+        } catch (e: Exception) {
+            L10n.FOLLOW_SYSTEM
+        }
+    }
+
+    fun saveLanguage(tag: String) {
+        val sp = prefs ?: return
+        try {
+            sp.edit().putString(KEY_LANGUAGE, tag).apply()
         } catch (e: Exception) {
             // ignore
         }

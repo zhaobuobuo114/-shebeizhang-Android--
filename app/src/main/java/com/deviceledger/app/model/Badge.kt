@@ -1,6 +1,8 @@
 package com.deviceledger.app.model
 
+import android.content.Context
 import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import com.deviceledger.app.R
 import com.deviceledger.app.util.DateUtil
 
@@ -11,15 +13,15 @@ import com.deviceledger.app.util.DateUtil
  * 之后即便数字回落（比如删掉设备导致总投入下降），勋章也不会熄灭，
  * 这一点和 QQ 的勋章墙一致：拿到过就是拿到过。
  *
- * 清单、id、名称、达成条件文案必须与鸿蒙端逐项一致——导出文件里只写 id，
- * 三样里任何一项对不上，从一端导出的文件在另一端就会认错或认不出勋章。
- * 图案（iconRes）是各端自己的呈现物，不参与互通：安卓用专属插画，
- * 鸿蒙目前仍是 emoji。改图案不需要动另一端，改上面三样必须同时改两端。
+ * 清单与 id 必须与鸿蒙端逐项一致——导出文件里只写 id，id 对不上就从另一端认错勋章。
+ * 名称与达成条件是 v2.0.0 起随语言走的展示文案，两端的取值同源于根目录的
+ * _i18n_master.json（badge_<id>_name / badge_<id>_desc），所以"一致"这件事由主表保证，
+ * 不再靠两边各抄一遍中文字面量。图案（iconRes）仍是各端自己的呈现物，不参与互通。
  */
 data class BadgeDef(
     val id: String,       // 唯一标识，写进导出文件
-    val name: String,     // 勋章名
-    val desc: String,     // 达成条件说明
+    @field:StringRes val nameRes: Int,     // 勋章名（随语言）
+    @field:StringRes val descRes: Int,     // 达成条件说明（随语言）
     @field:DrawableRes val iconRes: Int   // 专属徽章插画
 )
 
@@ -40,24 +42,21 @@ object Badges {
     @DrawableRes
     const val MEDAL_RES: Int = R.drawable.badge_medal
 
-    /** 回收站里已删除的设备也计入统计，避免删掉设备后勋章"倒退"的观感 */
-    const val KEEP_AFTER_DELETE = true
-
     val ALL: List<BadgeDef> = listOf(
-        BadgeDef("first_device", "初次见面", "记录第一台设备", R.drawable.badge_first_device),
-        BadgeDef("count_10", "十全十美", "设备数达到 10 台", R.drawable.badge_count_10),
-        BadgeDef("count_25", "成群结队", "设备数达到 25 台", R.drawable.badge_count_25),
-        BadgeDef("spend_1k", "小有积蓄", "总投入超过 1000 元", R.drawable.badge_spend_1k),
-        BadgeDef("spend_10k", "万元户", "总投入超过 10000 元", R.drawable.badge_spend_10k),
-        BadgeDef("spend_50k", "家底殷实", "总投入超过 50000 元", R.drawable.badge_spend_50k),
-        BadgeDef("fav_3", "心头好", "收藏 3 台设备", R.drawable.badge_fav_3),
-        BadgeDef("fav_10", "宠爱有加", "收藏 10 台设备", R.drawable.badge_fav_10),
-        BadgeDef("days_365", "长情相伴", "有设备用满 365 天", R.drawable.badge_days_365),
-        BadgeDef("days_1095", "三年之约", "有设备用满 1095 天", R.drawable.badge_days_1095),
-        BadgeDef("kind_8", "品类达人", "覆盖 8 种设备类型", R.drawable.badge_kind_8),
-        BadgeDef("kind_20", "面面俱到", "覆盖 20 种设备类型", R.drawable.badge_kind_20),
-        BadgeDef("roi", "回本达人", "有设备日均低于 0.5 元", R.drawable.badge_roi),
-        BadgeDef("big_ticket", "大手笔", "单台设备超过 5000 元", R.drawable.badge_big_ticket)
+        BadgeDef("first_device", R.string.badge_first_device_name, R.string.badge_first_device_desc, R.drawable.badge_first_device),
+        BadgeDef("count_10", R.string.badge_count_10_name, R.string.badge_count_10_desc, R.drawable.badge_count_10),
+        BadgeDef("count_25", R.string.badge_count_25_name, R.string.badge_count_25_desc, R.drawable.badge_count_25),
+        BadgeDef("spend_1k", R.string.badge_spend_1k_name, R.string.badge_spend_1k_desc, R.drawable.badge_spend_1k),
+        BadgeDef("spend_10k", R.string.badge_spend_10k_name, R.string.badge_spend_10k_desc, R.drawable.badge_spend_10k),
+        BadgeDef("spend_50k", R.string.badge_spend_50k_name, R.string.badge_spend_50k_desc, R.drawable.badge_spend_50k),
+        BadgeDef("fav_3", R.string.badge_fav_3_name, R.string.badge_fav_3_desc, R.drawable.badge_fav_3),
+        BadgeDef("fav_10", R.string.badge_fav_10_name, R.string.badge_fav_10_desc, R.drawable.badge_fav_10),
+        BadgeDef("days_365", R.string.badge_days_365_name, R.string.badge_days_365_desc, R.drawable.badge_days_365),
+        BadgeDef("days_1095", R.string.badge_days_1095_name, R.string.badge_days_1095_desc, R.drawable.badge_days_1095),
+        BadgeDef("kind_8", R.string.badge_kind_8_name, R.string.badge_kind_8_desc, R.drawable.badge_kind_8),
+        BadgeDef("kind_20", R.string.badge_kind_20_name, R.string.badge_kind_20_desc, R.drawable.badge_kind_20),
+        BadgeDef("roi", R.string.badge_roi_name, R.string.badge_roi_desc, R.drawable.badge_roi),
+        BadgeDef("big_ticket", R.string.badge_big_ticket_name, R.string.badge_big_ticket_desc, R.drawable.badge_big_ticket)
     )
 
     fun byId(id: String): BadgeDef? = ALL.firstOrNull { it.id == id }
@@ -128,6 +127,6 @@ object Badges {
         return fresh
     }
 
-    /** 勋章获得日期的展示文案，如「2026.03.05 达成」 */
-    fun dateText(at: Long): String = DateUtil.formatStamp(at)
+    /** 勋章获得日期本身（不含"达成"字样），如 2026.03.05 / Oct 10, 2026 */
+    fun dateText(context: Context, at: Long): String = DateUtil.formatStamp(context, at)
 }

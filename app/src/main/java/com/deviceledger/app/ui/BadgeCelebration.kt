@@ -10,10 +10,12 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
+import com.deviceledger.app.R
 import com.deviceledger.app.databinding.ItemBadgePageBinding
 import com.deviceledger.app.databinding.ViewBadgeCelebrationBinding
 import com.deviceledger.app.model.BadgeDef
 import com.deviceledger.app.model.Badges
+import com.deviceledger.app.util.L10n
 import kotlin.math.max
 import kotlin.math.min
 
@@ -38,6 +40,7 @@ class BadgeCelebration(
     private var entrance: ValueAnimator? = null
     private val pending = ArrayList<Runnable>()
     private var shown = false
+    private var items: List<Pair<BadgeDef, Long>> = emptyList()
 
     val isShowing: Boolean get() = shown
 
@@ -46,11 +49,13 @@ class BadgeCelebration(
         if (items.isEmpty() || shown) return
         theme = t
         shown = true
+        this.items = items
 
         val root = binding.badgeLayer
         // 这里刻意不用 theme.scrim：深色主题的遮罩是 60% 黑，压在近黑的页面上几乎压不出
         // 层次，勋章会跟底下的列表糊在一起。弹屏要的是"世界先暗下去"，所以给一档更重的专用底
         binding.badgeScrim.setBackgroundColor(if (t.dark) DIM_DARK else DIM_LIGHT)
+        binding.badgeHint.setText(R.string.celebrate_hint)
         binding.badgeHint.setTextColor(t.sub)
         binding.badgePageLabel.setTextColor(t.sub)
         binding.badgeHint.alpha = 0f
@@ -65,9 +70,16 @@ class BadgeCelebration(
         pager.unregisterOnPageChangeCallback(pageCallback)
         pager.registerOnPageChangeCallback(pageCallback)
 
+        // 顺序不能反：dismiss() 用的是 withEndAction{ visibility = GONE }，
+        // 而 cancel() 会触发 onAnimationEnd，那个收尾回调就在 cancel() 里跑掉。
+        // 原先先设 VISIBLE 再 cancel，等于"刚显示出来就被上一轮的收尾按回 GONE"——
+        // 关闭后 240ms 内又达成一枚勋章时，弹屏会进入"逻辑上已显示（返回键已被接管）
+        // 但屏幕上看不见"的状态。先 cancel、再落 VISIBLE 才成立。
+        // （报告建议的 setListener(null) 对 withEndAction 无效：它挂在 mAnimatorOnEnd 上，
+        //   不在 listener 列表里。UndoBar 用 setListener 是因为它本来就是监听器写法。）
+        root.animate().cancel()
         root.visibility = View.VISIBLE
         root.alpha = 0f
-        root.animate().cancel()
         root.animate().alpha(1f).setDuration(FADE_MS).start()
 
         // 遮罩本身吃掉点击：点勋章以外的任何地方都关闭
@@ -105,13 +117,29 @@ class BadgeCelebration(
         }.start()
     }
 
+    /**
+     * 语言变了。每一页的勋章名与日期是绑定时从资源现取的（PageAdapter 里存的是 BadgeDef），
+     * 重绑一遍就是新语言；但底部那句提示与页码是 show() 那一刻定型的字符串，得自己重取。
+     * 与鸿蒙端 `Index.onLangChange()` 里重算 celebrationItems 是同一条约束。
+     */
+    fun retext() {
+        if (!shown) return
+        binding.badgeHint.setText(R.string.celebrate_hint)
+        (binding.badgePager.adapter as? PageAdapter)?.notifyDataSetChanged()
+        if (items.size > 1) {
+            binding.badgePageLabel.text = pageText(binding.badgePager.currentItem + 1, items.size)
+        }
+    }
+
     private val pageCallback = object : ViewPager2.OnPageChangeCallback() {
         override fun onPageSelected(position: Int) {
             binding.badgePageLabel.text = pageText(position + 1, binding.badgePager.adapter?.itemCount ?: 1)
         }
     }
 
-    private fun pageText(i: Int, n: Int): String = "$i / $n"
+    /** 页码走资源而不是写死 "$i / $n"：鸿蒙端取的就是 celebrate_page */
+    private fun pageText(i: Int, n: Int): String =
+        L10n.str(ctx, R.string.celebrate_page, i.toString(), n.toString())
 
     /**
      * 入场：从下方升起 + 转半圈 + 落位时缩放收回 1.12→1.0。
@@ -190,9 +218,9 @@ class BadgeCelebration(
         override fun onBindViewHolder(holder: PageHolder, position: Int) {
             val (def, at) = items[position]
             holder.b.pageIcon.setImageResource(def.iconRes)
-            holder.b.pageName.text = def.name
+            holder.b.pageName.text = ctx.getString(def.nameRes)
             holder.b.pageName.setTextColor(theme.text)
-            holder.b.pageDate.text = Badges.dateText(at) + " 达成"
+            holder.b.pageDate.text = L10n.str(ctx, R.string.badge_unlocked_at, Badges.dateText(ctx, at))
             holder.b.pageDate.setTextColor(theme.primary)
             // 第一页由入场动画接手透明度；其余页直接可见
             if (position != 0) {

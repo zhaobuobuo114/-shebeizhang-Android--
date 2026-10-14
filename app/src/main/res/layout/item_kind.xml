@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 60x60 的格子尺寸不能动：MainActivity.computeKindCols() 按 60+6=66dp 步长算列数，
+     行高也按 rows*66-6 钉死，与鸿蒙 FlexWrap 同公式。变长文案只压标签自己消化 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/kindRoot"
     android:layout_width="60dp"
@@ -10,16 +12,21 @@
         android:id="@+id/ivKindIcon"
         android:layout_width="32dp"
         android:layout_height="32dp"
-        android:contentDescription="类型图标" />
+        android:contentDescription="@string/cd_kind_icon" />
 
+    <!-- 英文名（Smart speaker / Drawing tablet 之类）一行装不下：
+         改成两行 + 8-10sp 自动缩放，高度固定 24dp（32+2+24=58 ≤ 60，格子不破）；
+         恢复默认字体内边距，避免拉丁文下伸部（g/j/y）被裁 -->
     <TextView
         android:id="@+id/tvKindLabel"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="24dp"
         android:layout_marginTop="2dp"
+        android:autoSizeMaxTextSize="10sp"
+        android:autoSizeMinTextSize="8sp"
+        android:autoSizeTextType="uniform"
         android:ellipsize="end"
         android:gravity="center"
-        android:includeFontPadding="false"
-        android:maxLines="1"
+        android:maxLines="2"
         android:textSize="10sp" />
 </LinearLayout>

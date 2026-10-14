@@ -5,6 +5,8 @@ import android.view.Gravity
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import com.deviceledger.app.R
+import com.deviceledger.app.util.L10n
 
 /**
  * 一句问话 + 两个按钮的确认面板。
@@ -28,7 +30,7 @@ object ConfirmSheet {
             msg.setTextColor(theme.text2)
             body.addView(msg)
 
-            val no = SheetKit.button(ctx, theme, "取消", false) { dismiss() }
+            val no = SheetKit.button(ctx, theme, L10n.str(ctx, R.string.common_cancel), false) { dismiss() }
             val yes = SheetKit.button(ctx, theme, yesText, true) {
                 dismiss()
                 onYes()

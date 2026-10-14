@@ -52,6 +52,7 @@
 | 里程碑勋章 | 14 枚（首台、十台、万元户、用满三年、回本达人……）；点总览卡右侧胶囊开勋章墙，未解锁的灰着并写明达成条件；拿到过就永远亮着，删设备让数字回落也不熄灭 |
 | 达成弹屏 | 点亮勋章时全屏庆祝：勋章自下方升起转半圈、落位轻弹，背后一朵短小烟花；一次点亮多枚可左右划看；震动走系统触感通道，未新增权限 |
 | 备份与恢复 | 自动滚动备份 5 份、保留 30 天，连回收站与勋章一起走；可从文件恢复，覆盖前必先留底，留底失败即中止。导出文件只写设备与勋章 id，`FORMAT / VERSION / 41 类 key / 14 枚 id` 是与鸿蒙版的互通契约 |
+| 界面语言 | 简体中文 / 繁體中文 / 日本語 / English，默认跟随系统（系统语言不在这四种之内时走英文）；也可在「⋯」面板最前面的语言栏里手动换，切换**不重启、不丢当前排序 / 筛选 / 编辑状态** |
 | 昼夜模式 | 右上角太阳 / 月亮切换，260ms 颜色插值过渡，选择会被记住，系统控件同步跟随 |
 | 首次启动 | 进来先阅读《隐私条款》与《服务条款》，两份条款用系统浏览器打开；勾选同意后才能进应用，不同意可直接退出，确认过一次就不再打扰 |
 | 隐私 | 纯本地，不联网，不申请任何权限 |
@@ -91,10 +92,11 @@ Androidshebeizhang
     │   │   ├── Badge.kt                  14 枚里程碑勋章清单与判定（id / 名称 / 达成条件是双端契约）
     │   │   └── ChartData.kt              按类型聚合成饼图数据（最多 6 段，其余合并）
     │   ├── util
-    │   │   ├── DateUtil.kt               日期解析、天数差（正午日序号）、脏日期修复、人性化文案
-    │   │   ├── DeviceStore.kt            SharedPreferences 增删改查 + 回收站 + 主题持久化
+    │   │   ├── L10n.kt                   语言中枢：解析"跟随系统"、落到 per-app locale、取文案与复数
+    │   │   ├── DateUtil.kt               日期解析、天数差（正午日序号）、脏日期修复；存储恒为 yyyy-MM-dd，展示按语言
+    │   │   ├── DeviceStore.kt            SharedPreferences 增删改查 + 回收站 + 主题与语言持久化
     │   │   ├── BackupStore.kt            5 份滚动自动备份与恢复（校验 format / version，覆盖前先留底）
-    │   │   └── Fmt.kt                    金额格式化（千分位、日均、色值透明度）
+    │   │   └── Fmt.kt                    金额格式化（千分位、日均、万/亿 或 K/M/B、色值透明度）
     │   └── ui
     │       ├── Theme.kt                  昼夜两套配色 + 插值 + 圆角 / 渐变 Drawable 工厂
     │       ├── PieChartView.kt           环形扇形图自定义 View（Canvas + ValueAnimator）
@@ -122,7 +124,9 @@ Androidshebeizhang
         ├── drawable-nodpi/               41 张 dev_*.png 设备插画 + 14 张 badge_*.png 勋章插画 + badge_medal
         │                                 + ic_sun / ic_moon / ic_empty / ic_star / ic_star_off / ic_top
         ├── mipmap-*                      启动图标（自适应图标 + 各密度方形图标）
-        ├── values/                       colors / themes / strings
+        ├── values/                       colors / themes / strings（strings.xml 默认 = 简体中文）
+        ├── values-zh-rTW|ja|en/          另外三种语言的 strings.xml（含 11 组 plurals）
+        │                                 全部由根目录 _i18n_master.json 经 _i18n_gen.py 生成，勿手改
         ├── xml/file_paths.xml            FileProvider 导出路径
         └── values-night/colors.xml       深色启动底色，防冷启动白闪
 ```
@@ -141,6 +145,7 @@ Androidshebeizhang
 | 主题 | `@State theme` 整体重绘 | `AppTheme.lerp` 做 260ms 颜色插值，动画结束后调用 `AppCompatDelegate.setDefaultNightMode`，让日期选择器等系统控件同步 |
 | 渐变 | 系统渐变 | 页面底色与总览卡用自定义 `GradientBgDrawable`（支持非等分停靠点，与鸿蒙 0.0 / 0.28 / 1.0 一致） |
 | 勋章达成震动 | **不主动震动**：`@ohos.vibrator` 与 `@system.vibrator` 都要求 `ohos.permission.VIBRATE`，为守住 `requestPermissions: []` 的零权限定位而不调用，只保留系统默认按压反馈 | `performHapticFeedback`，本就不需要权限，用户在系统里关掉触感时自然不震 |
+| 界面语言 | 原生资源限定目录**要冷启动才生效**（`setAppPreferredLanguage` 官方说明），所以全量文案落在 `resources/rawfile/i18n/*.json`，由 `utils/I18n.ets` 运行时读取才能原地切换 | `AppCompatDelegate.setApplicationLocales()`（appcompat 1.7.0）即时生效；`configChanges` 里声明了 `locale`，切语言走 `onConfigurationChanged` 原地重刷，不重建 Activity |
 
 ## 六、构建
 
@@ -203,6 +208,8 @@ APK 内包含 41 张设备图标、14 枚勋章插画与一枚奖牌入口图，
 
 | 版本 | 内容 |
 | --- | --- |
+| v2.0.1 | 小版本，与鸿蒙版 v2.0.1 同步。修「跟随系统」被上一次手动选择粘住：`L10n.apply()` 原先读 `LocaleListCompat.getDefault()`（appcompat 的应用生效语言表，且持久化），设备英文、手动选过日语之后再切回跟随系统仍是日语。按版本分开取设备语言——33+ 用 `LocaleManager.systemLocales`（per-app locale 在 T 起是系统能力，`Resources.getSystem()` 的配置也已被进程级覆盖，实测会停在日语），24–32 用 `Resources.getSystem().configuration.locales[0]`。新增 `LangResolveTest`：27 行解析用例表，与鸿蒙 `_test_lang_resolve.mjs` 逐行对应，单元测试 26 → 31 条；另加根目录 `_test_lang_device.py`——连着模拟器跑 20 条 uiautomator 文案断言（首启按设备语言、切四种语言、切回跟随系统、冷启动、crash 缓冲区），期望值全部从 `values-*/strings.xml` 现读，每次 dump 写唯一文件名。**复查第二轮**又修：选到"其实已经在用"的那门语言时面板不刷新且"待重开"标志变哑弹（下次任意配置变更会凭空弹出面板并顶掉确认框）、`onConfigurationChanged` 缺语言守卫（键盘/旋转会掐断扇形图展开动画并重建 41 个格子）、卡片无障碍描述与撤销条文案与编辑面板标题日期不随语言重取、英文金额 `1000.0K`/`1000.0M`/`1000.0B` 跨档进位、价格回填成科学计数法、逗号小数点输入被硬拒、导入价格无上界（新增 `MAX_PRICE=1e12`）、备份时间串缺一个逗号、`celebrate_page` 资源闲置、12 处整数参数未按约定 `.toString()`；闸门补牙（`_check_i18n.py` 里被 `if False` 永久关掉的转义校验、`<plurals>` 只比量形不比正文、`esc_android` 不转义值首 `@`/`?`）。单元测试 26 → 37 条，真机断言 25 条；逐条带 file:line 的清单见根目录 `_存疑清单.md` |
+| v2.0.0 | 全应用多语言（简中 / 繁中 / 日 / 英），默认跟随系统、可在「⋯」面板最前面的语言栏手动切换，切换不重建 Activity、不丢排序与编辑状态。原先 9 条 strings.xml 之外的 254 处中文字面量全部入资源表（243 条文案 + 11 组复数 × 4 语言，唯一真源是根目录 `_i18n_master.json`）；`¥` 与数字保持 ASCII、万/亿 在英文下改 K/M/B、存储日期恒为 `yyyy-MM-dd` 只在展示层本地化；修 `Calendar.getInstance()` 跟随默认语言导致在 Hijrah / 佛历 / 和历环境下把非公历年写进 `buyDate` 的数据级 bug；另修 8 处拉丁字母下会破版的布局（条款弹窗无滚动、类型格子 60dp 单行、图表头五项一行、置顶条无截断、空态定高、勋章格行数、左滑删除按文字实测宽度、首启中文占位外泄）。新增 6 条语言安全单元测试，共 26 条 |
 | v1.9.1 | 14 枚勋章由 emoji 换成专属 Q 版插画（描边与色板同那 41 张设备图）；达成由 Toast 改为全屏庆祝弹屏——勋章自下方升起转半圈、落位轻弹、背后一朵短小烟花，一次多枚可左右划看；总览卡右侧新增勋章胶囊；震动走 `performHapticFeedback`，仍未声明任何权限；与鸿蒙版 v1.9.1 同步 |
 | v1.9.0 | 一轮彻底排查的修复：导入不再"像 JSON 就收"（此前随便一份 JSON 选覆盖会清空整库）、覆盖与恢复前留底失败即中止、回收站与在册同 id 去重、勋章改为并入而非整体替换、脏值在 normalize 收敛、天数改用跨夏令时安全的"正午日序号"；回收站 / 勋章 / 自动备份三件套首次入库；补齐 edge-to-edge inset 与 onDestroy 的动画收口；新增 20 条 JVM 单元测试 |
 | v1.8.2 | 日期选择器的系统文字色改为按昼夜两套取值，深色模式下月份标题与日期数字用亮色，系统控件从此跟着应用的昼夜模式走 |

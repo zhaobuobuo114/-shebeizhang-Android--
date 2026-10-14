@@ -12,6 +12,7 @@ import org.junit.Test
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import java.util.Calendar
+import java.util.Locale
 import java.util.TimeZone
 
 /**
@@ -124,12 +125,16 @@ class DateLogicTest {
         assertEquals(1, DeviceCalc.daysUsed(dirty))
     }
 
-    /** 负价来自被改坏的文件，钳成 0，免得把扇形图算出负百分比 */
+    /** 负价与天价都来自被改坏的文件，一律钳成 0：负价会把扇形图算成负百分比，
+     *  而 1e300 会让 Fmt.money 排出四百多个字符，把卡片和图表一起撑爆 */
     @Test
     fun normalizeClampsImpossiblePrices() {
         assertEquals(0.0, baseNormalize(price = -500.0).price, 0.0)
         assertEquals(0.0, baseNormalize(price = Double.POSITIVE_INFINITY).price, 0.0)
+        assertEquals(0.0, baseNormalize(price = Double.NaN).price, 0.0)
         assertEquals(1234.5, baseNormalize(price = 1234.5).price, 0.0001)
+        assertEquals(DeviceCalc.MAX_PRICE, baseNormalize(price = DeviceCalc.MAX_PRICE).price, 0.0)
+        assertEquals(0.0, baseNormalize(price = DeviceCalc.MAX_PRICE * 10).price, 0.0)
     }
 
     /** 老版本的中文分类名必须映射到 key，否则"覆盖多少种类型"的勋章会算错 */
@@ -154,7 +159,9 @@ class DateLogicTest {
     @Test
     fun springForwardAnchorActuallyCrossesDst() {
         val expected = ChronoUnit.DAYS.between(LocalDate.of(2026, 3, 1), LocalDate.now()).toInt()
-        val now = Calendar.getInstance()
+        // 必须与 DateUtil 一样钉死公历：JVM 默认语言是 th-TH / ja-JP 时
+        // Calendar.getInstance() 会给出佛历/和历的年份，这个对照组本身就错，用例就失去意义
+        val now = Calendar.getInstance(Locale.ROOT)
         val midnightDiff = ((localMidnight(now.get(Calendar.YEAR), now.get(Calendar.MONTH) + 1, now.get(Calendar.DAY_OF_MONTH))
             - localMidnight(2026, 3, 1)) / DAY_MS).toInt()
         assertNotEquals("锚点没覆盖到拨快那天，用例失去意义", expected, midnightDiff)
@@ -162,7 +169,7 @@ class DateLogicTest {
     }
 
     private fun localMidnight(year: Int, month: Int, day: Int): Long {
-        val c = Calendar.getInstance()
+        val c = Calendar.getInstance(Locale.ROOT)
         c.clear()
         c.set(year, month - 1, day, 0, 0, 0)
         return c.timeInMillis

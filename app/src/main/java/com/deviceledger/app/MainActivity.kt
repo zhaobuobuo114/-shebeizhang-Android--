@@ -4,6 +4,7 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.app.DatePickerDialog
 import android.app.Dialog
+import android.content.res.Configuration
 import android.content.Context
 import android.content.Intent
 import android.graphics.Canvas
@@ -69,18 +70,39 @@ import com.deviceledger.app.ui.roundedDrawable
 import com.deviceledger.app.ui.roundedTopDrawable
 import com.deviceledger.app.ui.tintTo
 import com.deviceledger.app.ui.topPressEffect
+import com.deviceledger.app.util.L10n
+import com.deviceledger.app.util.Lang
 import com.deviceledger.app.util.BackupStore
 import com.deviceledger.app.util.DateUtil
 import com.deviceledger.app.util.DeviceStore
 import com.deviceledger.app.util.Fmt
 import java.util.Calendar
+import java.util.Locale
 import java.util.Comparator
+
+/**
+ * 页脚那条链接指向作者的 GitHub。写在这里而不是文案里：
+ * 四门语言的 `footer_github` 都长成「我的 GitHub：{0}」，URL 是数据不是文案，
+ * 放进文案表会让它有机会被译歪。鸿蒙端 `pages/Index.ets` 有同一个常量，值必须一致。
+ */
+private const val GITHUB_URL = "https://github.com/zhaobuobuo114"
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: DeviceAdapter
     private lateinit var kindBinder: KindTilesBinder
+
+    /**
+     * 界面上的文案上一次是**按哪门语言渲染**的。
+     *
+     * 判"语言有没有变"必须拿它当基准，不能拿 `L10n.lang()`：`apply()` 在切语言那一刻
+     * 就把 current 改成了新语言，而 Resources 要等系统投递配置变更才换过来——
+     * 在 onConfigurationChanged 里比较"自己前后的 L10n.lang()"永远相等，
+     * 照那样加守卫就会把所有重刷跳过，直接退回 v2.0.0 那个"背景旧语言、面板新语言"的 bug。
+     * 这个字段只在真的刷过一遍文案之后才更新，它记的是渲染状态，不是意图。
+     */
+    private var renderedLang: Lang? = null
     /** 列表动画：只让"位置挪动"播，时长与曲线每次提交列表前指定 */
     private lateinit var listAnimator: MoveAnimator
 
@@ -106,7 +128,9 @@ class MainActivity : AppCompatActivity() {
 
     private var editingId: String? = null
     private var editKind: String = "phone"
-    private val editDate: Calendar = Calendar.getInstance()
+    // 必须公历：这个 Calendar 的 YEAR/MONTH/DAY 会被拼成存盘的 buyDate，
+    // 用跟随语言的 getInstance() 在 Hijrah / 佛历 / 和历设备上会写出 1447-xx-xx 这种脏数据
+    private val editDate: Calendar = Calendar.getInstance(Locale.ROOT)
     private var pendingDeleteId: String? = null
 
     private var displayTotal: Double = 0.0
@@ -132,6 +156,8 @@ class MainActivity : AppCompatActivity() {
     private val badgeState = mutableMapOf<String, Long>()
     /** 刚删掉的那一条，撤销条按它把设备放回去 */
     private var lastDeletedId: String? = null
+    /** 撤销条那句话里嵌的设备名：切语言时要按原样重取一遍文案 */
+    private var undoName: String = ""
     private var undoBar: UndoBar? = null
     /** 勋章达成弹屏：根布局上的一层覆盖，取代原来的那条 Toast */
     private lateinit var celebration: BadgeCelebration
@@ -163,6 +189,8 @@ class MainActivity : AppCompatActivity() {
         AppCompatDelegate.setDefaultNightMode(
             if (dark) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
         )
+        // 同理，界面语言也要在 super 之前定下来：晚一步首帧就按错语言排好了
+        L10n.apply(applicationContext)
         super.onCreate(savedInstanceState)
 
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -199,6 +227,7 @@ class MainActivity : AppCompatActivity() {
         // 部分厂商 ROM（含 HarmonyOS 的安卓兼容层）在这两处会抛空指针导致闪退。
         FieldCompat.apply(binding.etName, binding.etPrice, binding.etNote)
         setupDataHub()
+        renderStaticTexts()
         celebration = BadgeCelebration(this, binding.badgeLayer)
 
         // 首次启动先把隐私条款与服务条款摆出来，勾选同意之后才把本机数据读进界面
@@ -665,15 +694,18 @@ class MainActivity : AppCompatActivity() {
                 bgPaint.color = theme.danger
                 c.drawRect(left, itemView.top.toFloat(), right, itemView.bottom.toFloat(), bgPaint)
 
-                if (right - left > 40f * density) {
-                    val textPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-                    textPaint.color = Color.WHITE
-                    textPaint.textSize = 14f * density
-                    textPaint.textAlign = Paint.Align.CENTER
-                    textPaint.isFakeBoldText = true
+                val textPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+                textPaint.color = Color.WHITE
+                textPaint.textSize = 14f * density
+                textPaint.textAlign = Paint.Align.CENTER
+                textPaint.isFakeBoldText = true
+                val label = getString(R.string.swipe_delete)
+                // 露出的红色区宽度按文案实测：原来钉死 40dp 只够"删除"两个字，
+                // 换英文后 drawText 没有省略号，字会被红色背景直接切掉
+                if (right - left > textPaint.measureText(label) + 24f * density) {
                     val fm = textPaint.fontMetrics
                     c.drawText(
-                        "删除",
+                        label,
                         (left + right) / 2f,
                         (itemView.top + itemView.bottom) / 2f - (fm.ascent + fm.descent) / 2f,
                         textPaint
@@ -746,7 +778,8 @@ class MainActivity : AppCompatActivity() {
         binding.btnKindMore.visibility =
             if (kindCols < DEVICE_KINDS.size) View.VISIBLE else View.GONE
         binding.tvKindMore.text =
-            if (kindExpanded) "收起" else ("展开全部 " + DEVICE_KINDS.size + " 类")
+            if (kindExpanded) getString(R.string.editor_kind_collapse)
+            else getString(R.string.editor_kind_expand, DEVICE_KINDS.size.toString())
         val target = if (kindExpanded) 0f else 180f
         if (animateArrow) {
             // 鸿蒙版箭头 rotate 写在 .animation(140ms EaseOut) 之上，
@@ -829,7 +862,7 @@ class MainActivity : AppCompatActivity() {
     private fun updateFavChip(animate: Boolean = false) {
         val count = devices.count { it.favorite }
         val tv = binding.btnFavOnly
-        tv.text = if (count > 0) "★ 收藏 $count" else "★ 收藏"
+        tv.text = if (count > 0) getString(R.string.sort_fav_count, count.toString()) else getString(R.string.sort_fav)
         // 220ms 对应鸿蒙 setFavOnly 的 animateTo({ duration: 220, curve: Curve.Friction })
         tv.chipTo(
             if (favOnly) theme.gold else theme.chipBg,
@@ -855,7 +888,8 @@ class MainActivity : AppCompatActivity() {
      * 所以这里也只做文字色渐变，不给图标加动画。
      */
     private fun renderFavSwitch(animate: Boolean = false) {
-        binding.tvFavState.text = if (editFavorite) "已收藏" else "未收藏"
+        binding.tvFavState.text =
+            if (editFavorite) getString(R.string.editor_fav_on) else getString(R.string.editor_fav_off)
         binding.tvFavState.tintTo(
             if (editFavorite) theme.gold else theme.sub,
             1f,
@@ -917,6 +951,20 @@ class MainActivity : AppCompatActivity() {
         binding.confirmCard.setOnClickListener { /* 不处理 */ }
         press(binding.btnConfirmCancel) { showConfirm(false) }
         press(binding.btnConfirmDelete) { confirmDelete() }
+        // 页脚那条 GitHub 不带按压缩放：它是一行文字，不是按钮
+        binding.tvGithub.setOnClickListener { openGitHub() }
+    }
+
+    /**
+     * 用系统浏览器打开作者的 GitHub。没有能处理 http 的应用时静默失败 ——
+     * 与隐私弹窗里那两个链接同一套做法：点不动就是点不动，不该拿一条报错打断用户。
+     */
+    private fun openGitHub() {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(GITHUB_URL)))
+        } catch (e: Exception) {
+            // 机器上没有可打开的浏览器
+        }
     }
 
     private fun press(view: View, scale: Float = 0.92f, action: () -> Unit) {
@@ -984,7 +1032,8 @@ class MainActivity : AppCompatActivity() {
      */
     private fun toggleChart() {
         chartOpen = !chartOpen
-        binding.btnToggleChart.text = if (chartOpen) "收起" else "展开"
+        binding.btnToggleChart.text =
+            if (chartOpen) getString(R.string.chart_collapse) else getString(R.string.chart_expand)
         val body = binding.chartBody
         val lp = body.layoutParams as LinearLayout.LayoutParams
         val margin = (10f * density).toInt()
@@ -1141,14 +1190,19 @@ class MainActivity : AppCompatActivity() {
             if (best == null || a < DeviceCalc.avgPerDay(best)) best = item
         }
 
-        binding.tvCountBadge.text = devices.size.toString() + " 台在册"
-        binding.tvStickyCount.text = devices.size.toString() + " 台"
+        binding.tvCountBadge.text =
+            resources.getQuantityString(R.plurals.p_in_record, devices.size, devices.size.toString())
+        binding.tvStickyCount.text =
+            resources.getQuantityString(R.plurals.p_sticky_count, devices.size, devices.size.toString())
         if (best == null) {
             binding.rowBest.visibility = View.GONE
         } else {
             binding.rowBest.visibility = View.VISIBLE
             binding.tvBestName.text = best.name
-            binding.tvBestAvg.text = "日均 ¥" + Fmt.smallMoney(DeviceCalc.avgPerDay(best))
+            binding.tvBestAvg.text = getString(
+                R.string.sum_avg_prefix,
+                Fmt.smallMoneyLabel(this, DeviceCalc.avgPerDay(best))
+            )
         }
 
         animateNumbers(total, avg, animateNumbers)
@@ -1164,15 +1218,15 @@ class MainActivity : AppCompatActivity() {
     private fun renderEmptyState() {
         val b = binding
         if (favOnly) {
-            b.tvEmptyTitle.text = "还没有收藏的设备"
-            b.tvEmptyDesc1.text = "点设备卡片右下角的星标，"
-            b.tvEmptyDesc2.text = "把最爱的设备收进来。"
-            b.btnEmptyAdd.text = "看全部设备"
+            b.tvEmptyTitle.text = getString(R.string.empty_fav_title)
+            b.tvEmptyDesc1.text = getString(R.string.empty_fav_desc1)
+            b.tvEmptyDesc2.text = getString(R.string.empty_fav_desc2)
+            b.btnEmptyAdd.text = getString(R.string.empty_fav_action)
         } else {
-            b.tvEmptyTitle.text = "还没有设备记录"
-            b.tvEmptyDesc1.text = "记下第一台设备的购买日期和价格，"
-            b.tvEmptyDesc2.text = "它会告诉你这台设备每天花了多少钱。"
-            b.btnEmptyAdd.text = "添加设备"
+            b.tvEmptyTitle.text = getString(R.string.empty_all_title)
+            b.tvEmptyDesc1.text = getString(R.string.empty_all_desc1)
+            b.tvEmptyDesc2.text = getString(R.string.empty_all_desc2)
+            b.btnEmptyAdd.text = getString(R.string.empty_all_action)
         }
     }
 
@@ -1215,10 +1269,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun renderNumbers() {
-        binding.tvTotalMoney.text = "¥" + Fmt.money(displayTotal)
-        binding.tvAvgMoney.text = "¥" + Fmt.smallMoney(displayAvg)
-        binding.tvStickyTotal.text = "¥" + Fmt.money(displayTotal)
-        binding.tvStickyAvg.text = "日均 ¥" + Fmt.smallMoney(displayAvg)
+        binding.tvTotalMoney.text = Fmt.moneyLabel(this, displayTotal)
+        binding.tvAvgMoney.text = Fmt.smallMoneyLabel(this, displayAvg)
+        binding.tvStickyTotal.text = Fmt.moneyLabel(this, displayTotal)
+        binding.tvStickyAvg.text =
+            getString(R.string.sticky_avg, Fmt.smallMoneyLabel(this, displayAvg))
     }
 
     /**
@@ -1227,7 +1282,7 @@ class MainActivity : AppCompatActivity() {
      *              展开时扇形会直接是终态，和鸿蒙版对不上。
      */
     private fun updateChart(animate: Boolean, force: Boolean = false) {
-        val slices = ChartData.slices(devices, chartMode == "amount")
+        val slices = ChartData.slices(this, devices, chartMode == "amount")
         val changed = force || slices != lastSlices
         if (!changed) {
             // 数据没变就整个跳过。早先这里仍会走 setData(animate = false)，
@@ -1245,7 +1300,7 @@ class MainActivity : AppCompatActivity() {
         box.removeAllViews()
         if (slices.isEmpty()) {
             val tv = TextView(this)
-            tv.text = "还没有数据"
+            tv.text = getString(R.string.chart_empty_legend)
             tv.textSize = 12f
             tv.setTextColor(theme.sub)
             box.addView(tv)
@@ -1266,9 +1321,10 @@ class MainActivity : AppCompatActivity() {
             name.text = s.n
             name.setTextColor(theme.text2)
             value.text = if (chartMode == "amount") {
-                "¥" + Fmt.money(s.v)
+                Fmt.moneyLabel(this, s.v)
             } else {
-                Math.round(s.v).toString() + " 台"
+                val n = Math.round(s.v).toInt()
+                resources.getQuantityString(R.plurals.p_sticky_count, n, n.toString())
             }
             value.setTextColor(theme.text)
             percent.text = if (total > 0) (pct[i].toString() + "%") else "0%"
@@ -1287,10 +1343,14 @@ class MainActivity : AppCompatActivity() {
      */
     private fun updateSortChips(animate: Boolean = false) {
         // 正序时文案跟着反过来，免得"日均最高"配上一行从低到高的数据自相矛盾
-        binding.sortAvg.text = if (sortAsc) "日均最低" else "日均最高"
-        binding.sortPrice.text = if (sortAsc) "价格最低" else "价格最高"
-        binding.sortDate.text = if (sortAsc) "最早购买" else "最近购买"
-        binding.sortDays.text = if (sortAsc) "用最短" else "用最久"
+        binding.sortAvg.text =
+            if (sortAsc) getString(R.string.sort_avg_asc) else getString(R.string.sort_avg_desc)
+        binding.sortPrice.text =
+            if (sortAsc) getString(R.string.sort_price_asc) else getString(R.string.sort_price_desc)
+        binding.sortDate.text =
+            if (sortAsc) getString(R.string.sort_date_asc) else getString(R.string.sort_date_desc)
+        binding.sortDays.text =
+            if (sortAsc) getString(R.string.sort_days_asc) else getString(R.string.sort_days_desc)
         setChip(binding.sortAvg, sortType == "avg", 13f)
         setChip(binding.sortPrice, sortType == "price", 13f)
         setChip(binding.sortDate, sortType == "date", 13f)
@@ -1379,7 +1439,7 @@ class MainActivity : AppCompatActivity() {
         val item = src?.let { findLive(it.id) ?: it }
         if (item == null) {
             editingId = null
-            binding.tvEditorTitle.text = "添加设备"
+            binding.tvEditorTitle.text = getString(R.string.editor_title_add)
             binding.etName.setText("")
             binding.etPrice.setText("")
             binding.etNote.setText("")
@@ -1388,12 +1448,9 @@ class MainActivity : AppCompatActivity() {
             editDate.timeInMillis = System.currentTimeMillis()
         } else {
             editingId = item.id
-            binding.tvEditorTitle.text = "编辑设备"
+            binding.tvEditorTitle.text = getString(R.string.editor_title_edit)
             binding.etName.setText(item.name)
-            val p = item.price
-            binding.etPrice.setText(
-                if (p == Math.floor(p) && !p.isInfinite()) p.toLong().toString() else p.toString()
-            )
+            binding.etPrice.setText(plainPrice(item.price))
             binding.etNote.setText(item.note)
             editKind = item.category
             editFavorite = item.favorite
@@ -1450,10 +1507,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun renderDateText() {
-        binding.tvDate.text = DateUtil.format(
-            editDate.get(Calendar.YEAR),
-            editDate.get(Calendar.MONTH) + 1,
-            editDate.get(Calendar.DAY_OF_MONTH)
+        // 存储格式恒为 yyyy-MM-dd，这里只是给人看的一层：英文显示 Mar 5, 2026
+        binding.tvDate.text = DateUtil.displayDate(
+            this,
+            DateUtil.format(
+                editDate.get(Calendar.YEAR),
+                editDate.get(Calendar.MONTH) + 1,
+                editDate.get(Calendar.DAY_OF_MONTH)
+            )
         )
     }
 
@@ -1477,21 +1538,38 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    /**
+     * 回填输入框用的价格串。
+     *
+     * `Double.toString` 从 1e7 起改用 E 记法：12345678.9 会原样变成 `1.23456789E7`
+     * 显示在价格框里（整数那侧原先靠 `toLong()` 躲开了，带小数的没躲开）。
+     * 一律走 BigDecimal 的 plain 形式，顺手把尾零收掉（1200.0 → 1200）。
+     */
+    private fun plainPrice(v: Double): String {
+        if (v.isNaN() || v.isInfinite()) return ""
+        return java.math.BigDecimal.valueOf(v).stripTrailingZeros().toPlainString()
+    }
+
     private fun onSave() {
         val name = binding.etName.text.toString().trim()
         val priceStr = binding.etPrice.text.toString().trim()
-        val price = priceStr.toDoubleOrNull()
+        val price = Fmt.parsePrice(priceStr)
         val buyDate = DateUtil.format(
             editDate.get(Calendar.YEAR),
             editDate.get(Calendar.MONTH) + 1,
             editDate.get(Calendar.DAY_OF_MONTH)
         )
 
+        // 比较用的 buyDate / today() 都是 yyyy-MM-dd 定长串，字典序即时间序，与语言无关
         val error: String? = when {
-            name.isEmpty() -> "请填写设备名称"
-            priceStr.isEmpty() -> "请填写购买价格"
-            price == null || price <= 0.0 || price.isNaN() || price.isInfinite() -> "请填写有效的购买价格"
-            buyDate > DateUtil.today() -> "购买日期不能晚于今天"
+            name.isEmpty() -> getString(R.string.err_name)
+            priceStr.isEmpty() -> getString(R.string.err_price_empty)
+            price == null || price <= 0.0 || price.isNaN() || price.isInfinite() ||
+                price > DeviceCalc.MAX_PRICE ->
+                // 上限必须与 DeviceCalc.normalize 的钳制同一条：否则一个 13 位的价格
+                // 能录进来、当场显示正常，杀掉进程重开却被清洗规则静默归零（数据没了）
+                getString(R.string.err_price_invalid)
+            buyDate > DateUtil.today() -> getString(R.string.err_date_future)
             else -> null
         }
         if (error != null) {
@@ -1606,7 +1684,8 @@ class MainActivity : AppCompatActivity() {
         // 列表的增删不在 animateTo 里（鸿蒙是先改 deviceList 再 animateTo），所以硬切
         refreshAll(animateNumbers = true)
         updateBadgeEntry()
-        undoBar?.show("已删除「" + nameOf(item) + "」，进了回收站") { undoDelete() }
+        undoName = nameOf(item)
+        undoBar?.show(getString(R.string.undo_deleted, undoName)) { undoDelete() }
     }
 
     private fun undoDelete() {
@@ -1662,7 +1741,8 @@ class MainActivity : AppCompatActivity() {
             this, theme,
             {
                 DataSheet.DataInfo(
-                    devices.size, trash.size, badgeState.size, BackupStore.listBackups(this)
+                    devices.size, trash.size, badgeState.size, BackupStore.listBackups(this),
+                    L10n.preferred()
                 )
             },
             DataSheet.DataActions(
@@ -1671,9 +1751,146 @@ class MainActivity : AppCompatActivity() {
                 onImportPick = { importLauncher.launch(arrayOf("application/json", "text/plain")) },
                 onRestoreBackup = { slot -> askRestoreBackup(slot) },
                 onOpenTrash = { openTrashSheet() },
-                onOpenBadges = { openBadgeWall() }
+                onOpenBadges = { openBadgeWall() },
+                onPickLanguage = { tag -> pickLanguage(tag) }
             )
         )
+    }
+
+    /**
+     * 换语言：落库 → 关掉面板 → 让系统投递配置变更。切完直接回到主页面看列表，
+     * 不再把面板重开一次（作者定的交互；旧做法会让面板闪一下、滚动位置弹回顶部）。
+     *
+     * 这里刻意不自己调 onConfigurationChanged：setApplicationLocales 之后 Resources
+     * 要等系统投递配置变更那一刻才换过来，抢在前面刷新会用旧语言把界面重搭一遍。
+     *
+     * "点的语言正好是当前生效那门"这种情况（设备是简中，用户从「跟随系统」改点「简体中文」）
+     * 不需要任何补救：系统不投递配置变更，界面本来就没有要换的文字，面板照旧关掉就行。
+     * 旧代码在这里要自己重开面板，只是为了把勾挪到新选项上——现在面板不在了，那个理由消失。
+     */
+    private fun pickLanguage(tag: String) {
+        if (L10n.preferred() == tag) return
+        DeviceStore.saveLanguage(tag)
+        hubDialog?.dismiss()
+        hubDialog = null
+        L10n.apply(applicationContext)
+    }
+
+    /**
+     * 语言变了就重刷所有写过的文案，而不是重建 Activity。
+     *
+     * AndroidManifest 里把 locale 放进了 configChanges：不拦的话切一次语言
+     * 就要销毁重建，而本界面有 50 多个状态字段、一行 onSaveInstanceState 都没有，
+     * 重建会把排序、只看收藏、图表开合、正在编辑的设备、开着的面板全部抹掉。
+     */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        L10n.syncCurrent(this)
+        val now = L10n.lang()
+        if (now == renderedLang) {
+            // 键盘弹出、深色切换、字体大小、屏幕尺寸都会走到这里，而那些跟语言无关：
+            // Resources 还是那门语言，文案一个字都不用重取。全套重刷反倒会把扇形图的
+            // 展开动画掐成终态、把 41 个类型格子整体重建一遍。
+            return
+        }
+        renderStaticTexts()
+        if (::kindBinder.isInitialized) kindBinder.build()
+        updateSortChips()
+        updateFavChip()
+        renderFavSwitch()
+        renderKindToggle(animateArrow = false)
+        binding.btnToggleChart.text =
+            if (chartOpen) getString(R.string.chart_collapse) else getString(R.string.chart_expand)
+        refreshAll(animateNumbers = false, animateSort = false, animateFav = false)
+        // 卡片文字与图例都是绑定时现取的，而 DiffUtil 只比设备数据、不含语言，
+        // 不显式重绑就会留下"界面已是新语言、卡片还是旧语言"的半吊子状态
+        adapter.rebindTexts()
+        updateChart(animate = false, force = true)
+        updateBadgeEntry()
+        // 编辑面板是常驻的一层，不会被面板重开顺带刷掉：标题与日期显示都得自己重取
+        if (binding.editorLayer.visibility == View.VISIBLE) {
+            binding.tvEditorTitle.text = getString(
+                if (editingId == null) R.string.editor_title_add else R.string.editor_title_edit
+            )
+            renderDateText()
+        }
+        // 撤销条的文案驻留 5 秒，删除后立刻进面板切语言就会整段留着旧语言
+        if (undoBar?.isShown == true) {
+            undoBar?.retext(getString(R.string.undo_deleted, undoName))
+        }
+        // 勋章弹屏：底部提示与页码是 show() 那一刻定型的，语言变了得重取一遍
+        if (::celebration.isInitialized) {
+            celebration.retext()
+        }
+        // 面板是 show() 那一刻用当时的字符串搭好的，语言一变它就是半中半英，而没人会再读第二遍。
+        // 现在的规则是"切完语言回到主页面"：谁开着就关掉谁 —— 数据面板、回收站、勋章墙、
+        // 导入与各个确认框都挂在 hubDialog 这一层上，一次 dismiss 全 cover 住。
+        hubDialog?.dismiss()
+        hubDialog = null
+    }
+
+    /**
+     * 把布局里写死的文案重新赋一遍值。
+     *
+     * 两件事都只能在这里做：
+     * 一是 `android:text="@string/x"` 是 inflate 那一刻解析的，我们不重建 Activity，
+     *    所以切语言后那些标签会永远停在旧语言（实测就是标题还写着"设备账"而卡片已经是"3 devices"）；
+     * 二是带参数的标签（购买价格（元））在 XML 里根本引用不了。
+     * 内容描述也一起刷，读屏软件拿到的才不是上一门语言。
+     */
+    private fun renderStaticTexts() {
+        val b = binding
+        b.tvTitle.setText(R.string.app_name)
+        b.tvSlogan.setText(R.string.top_slogan)
+        b.btnAdd.setText(R.string.top_add)
+        b.ivHubIcon.setContentDescription(getString(R.string.cd_hub))
+        b.ivThemeIcon.setContentDescription(getString(R.string.cd_theme))
+        b.btnBadgeEntry.setContentDescription(getString(R.string.cd_badges))
+        b.tvSummaryLabel.setText(R.string.sum_total_label)
+        b.tvAvgLabel.setText(R.string.sum_avg_label)
+        b.tvBestTag.setText(R.string.sum_best_label)
+        b.tvChartTitle.setText(R.string.chart_title)
+        b.tvChartSub.setText(R.string.chart_sub)
+        b.btnByAmount.setText(R.string.chart_by_amount)
+        b.btnByCount.setText(R.string.chart_by_count)
+        b.tvSortLabel.setText(R.string.sort_label)
+        // 页脚那条带 URL 参数，不能用 setText(R.string.x)：URL 是常量，文案表里只放句式
+        b.tvGithub.text = getString(R.string.footer_github, GITHUB_URL)
+        b.ivEmpty.setContentDescription(getString(R.string.cd_empty))
+        b.ivTop.setContentDescription(getString(R.string.cd_top))
+        b.btnUndo.setText(R.string.undo_button)
+        b.btnEditorClose.setText(R.string.editor_close)
+        b.tvLabelName.setText(R.string.editor_name_label)
+        b.etName.setHint(R.string.editor_name_hint)
+        b.etPrice.setHint(R.string.editor_price_hint)
+        b.tvLabelPrice.text = getString(R.string.editor_price_label, getString(R.string.fmt_currency))
+        b.tvLabelKind.setText(R.string.editor_kind_label)
+        b.tvLabelDate.setText(R.string.editor_date_label)
+        b.tvLabelNote.setText(R.string.editor_note_label)
+        b.etNote.setHint(R.string.editor_note_hint)
+        b.tvFavLabel.setText(R.string.editor_fav_label)
+        b.ivFavSwitch.setContentDescription(getString(R.string.cd_favorite_toggle))
+        b.btnCancel.setText(R.string.editor_cancel)
+        b.btnSave.setText(R.string.editor_save)
+        b.tvConfirmTitle.setText(R.string.delete_title)
+        b.btnConfirmCancel.setText(R.string.delete_cancel)
+        b.btnConfirmDelete.setText(R.string.delete_confirm)
+
+        // 这几处用的是复数资源与带参资源，XML 里引用不了，只能留 ASCII 占位。
+        // 它们原先要等数据加载完才被赋值，于是首次启动的条款弹窗后面会露出中文占位
+        // （英文界面上飘一个"0 台在册"）。这里按当前状态先刷一遍，
+        // 稍后 refreshAll 会用真实数字覆盖，两边不冲突。
+        val n = devices.size
+        b.tvCountBadge.text = resources.getQuantityString(R.plurals.p_in_record, n, n.toString())
+        b.tvStickyCount.text = resources.getQuantityString(R.plurals.p_sticky_count, n, n.toString())
+        b.tvStickyAvg.text = getString(R.string.sticky_avg, Fmt.smallMoneyLabel(this, 0.0))
+        b.tvTotalMoney.text = Fmt.moneyLabel(this, 0.0)
+        b.tvAvgMoney.text = Fmt.smallMoneyLabel(this, 0.0)
+        b.tvBadgeEntryCount.text =
+            getString(R.string.sum_badge_progress, badgeState.size.toString(), Badges.ALL.size.toString())
+        // 走到这里，布局里写死的那批文案已经全部按当前语言重取过了，
+        // 把这个状态记下来，onConfigurationChanged 才知道哪些配置变更其实不用刷
+        renderedLang = L10n.lang()
     }
 
     private fun openBadgeWall() {
@@ -1696,16 +1913,23 @@ class MainActivity : AppCompatActivity() {
     private fun writeSnapshotTo(uri: Uri) {
         val text = BackupStore.buildJson(currentSnapshot())
         val ok = try {
-            contentResolver.openOutputStream(uri)?.use {
-                it.write(text.toByteArray(Charsets.UTF_8))
+            // openOutputStream 允许返回 null（部分 provider、某些 ROM 上确实如此）。
+            // 原先是 `?.use{...}` 之后紧跟一句独立的 true —— 拿到 null 时一个字节都没写，
+            // 却照样告诉用户"已导出 N 台设备"。成功与否必须绑在真的拿到流上。
+            val out = contentResolver.openOutputStream(uri)
+            if (out == null) {
+                false
+            } else {
+                out.use { it.write(text.toByteArray(Charsets.UTF_8)) }
+                true
             }
-            true
         } catch (e: Exception) {
             false
         }
         Toast.makeText(
             this,
-            if (ok) "已导出 " + devices.size + " 台设备" else "导出失败，换一个位置再试",
+            if (ok) getString(R.string.import_exported, devices.size.toString())
+            else getString(R.string.import_export_failed),
             Toast.LENGTH_SHORT
         ).show()
     }
@@ -1718,7 +1942,7 @@ class MainActivity : AppCompatActivity() {
         }
         val snap = text?.let { BackupStore.parseJson(it) }
         if (snap == null) {
-            Toast.makeText(this, "这个文件里读不出设备账的数据", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.import_unreadable), Toast.LENGTH_SHORT).show()
             return
         }
         askImport(snap)
@@ -1727,30 +1951,32 @@ class MainActivity : AppCompatActivity() {
     /** 导入前先问清楚怎么并：合并是追加不重复的，覆盖是整体替换 */
     private fun askImport(snap: BackupStore.Snapshot) {
         val ctx = this
-        hubDialog = SheetKit.show(this, theme, "导入数据") { body, dismiss ->
+        hubDialog = SheetKit.show(this, theme, getString(R.string.import_title)) { body, dismiss ->
             val msg = SheetKit.note(
                 ctx, theme,
-                "这份文件里有 " + snap.devices.size + " 台设备、" + snap.recycle.size +
-                    " 条回收站记录、" + snap.badges.size + " 枚勋章。要怎么并进来？"
+                getString(
+                    R.string.import_question,
+                    snap.devices.size.toString(), snap.recycle.size.toString(), snap.badges.size.toString()
+                )
             )
             msg.setTextColor(theme.text2)
             body.addView(msg)
 
-            val cancel = SheetKit.button(ctx, theme, "取消", false) { dismiss() }
-            val overwrite = SheetKit.button(ctx, theme, "覆盖", false) {
+            val cancel = SheetKit.button(ctx, theme, getString(R.string.import_cancel), false) { dismiss() }
+            val overwrite = SheetKit.button(ctx, theme, getString(R.string.import_overwrite), false) {
                 dismiss()
                 // 覆盖不可逆：留底没写成就必须停下来，不能让用户以为"当前数据已经存好了"
                 if (!BackupStore.forceBackup(this, currentSnapshot())) {
-                    Toast.makeText(this, "没能写好回退快照，已取消覆盖", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, getString(R.string.import_rollback_overwrite), Toast.LENGTH_LONG).show()
                     return@button
                 }
                 applySnapshot(snap)
-                Toast.makeText(this, "已换成文件里的数据", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.import_overwritten), Toast.LENGTH_SHORT).show()
             }
-            val merge = SheetKit.button(ctx, theme, "合并", true) {
+            val merge = SheetKit.button(ctx, theme, getString(R.string.import_merge), true) {
                 dismiss()
                 if (!BackupStore.forceBackup(this, currentSnapshot())) {
-                    Toast.makeText(this, "没能写好回退快照，已取消导入", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, getString(R.string.import_rollback_import), Toast.LENGTH_LONG).show()
                     return@button
                 }
                 val before = devices.size
@@ -1759,7 +1985,8 @@ class MainActivity : AppCompatActivity() {
                 val added = devices.size - before
                 Toast.makeText(
                     this,
-                    if (added > 0) "导入完成，新增 $added 台设备" else "没有新设备需要并入",
+                    if (added > 0) getString(R.string.import_done, added.toString())
+                    else getString(R.string.import_nothing_new),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -1782,7 +2009,7 @@ class MainActivity : AppCompatActivity() {
             null
         }
         if (uri == null) {
-            Toast.makeText(this, "没能准备好要分享的文件", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.import_share_failed), Toast.LENGTH_SHORT).show()
             return
         }
         val intent = Intent(Intent.ACTION_SEND).apply {
@@ -1791,41 +2018,42 @@ class MainActivity : AppCompatActivity() {
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         try {
-            startActivity(Intent.createChooser(intent, "导出设备账数据"))
+            startActivity(Intent.createChooser(intent, getString(R.string.import_chooser_title)))
         } catch (e: Exception) {
-            Toast.makeText(this, "这台机器上没有可接收文件的应用", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.import_no_receiver), Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun askRestoreBackup(slot: Int) {
         val snap = BackupStore.readBackup(this, slot)
         if (snap == null) {
-            Toast.makeText(this, "这份快照读不出来了", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.import_snapshot_unreadable), Toast.LENGTH_SHORT).show()
             return
         }
         hubDialog = ConfirmSheet.show(
-            this, theme, "恢复备份",
-            "把现在的 " + devices.size + " 台设备换回 " + snap.devices.size + " 台（" +
-                DateUtil.formatClock(snap.exportedAt) + " 那一份）。" +
-                "当前数据会先自动留一份快照，恢复之后还能再换回来。",
-            "确认恢复"
+            this, theme, getString(R.string.restore_title),
+            getString(
+                R.string.restore_message,
+                devices.size.toString(), snap.devices.size.toString(), DateUtil.formatClock(this, snap.exportedAt)
+            ),
+            getString(R.string.restore_confirm)
         ) {
             // 确认文案承诺了"当前数据会先自动留一份快照"，留底失败就不能真换
             if (!BackupStore.forceBackup(this, currentSnapshot())) {
-                Toast.makeText(this, "没能写好回退快照，已取消恢复", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, getString(R.string.import_rollback_restore), Toast.LENGTH_LONG).show()
                 return@show
             }
             applySnapshot(snap)
-            Toast.makeText(this, "已恢复到这一份快照", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.restore_done), Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun askClearTrash() {
         if (trash.isEmpty()) return
         hubDialog = ConfirmSheet.show(
-            this, theme, "清空回收站",
-            "回收站里的 " + trash.size + " 条记录会被彻底删除，删掉之后找不回来。",
-            "清空"
+            this, theme, getString(R.string.clear_trash_title),
+            getString(R.string.clear_trash_message, trash.size.toString()),
+            getString(R.string.clear_trash_confirm)
         ) {
             hubDialog?.dismiss()
             hubDialog = null
@@ -1845,7 +2073,7 @@ class MainActivity : AppCompatActivity() {
             trash.removeAt(idx)
             DeviceStore.saveTrash(trash)
             refreshAll(animateNumbers = false)
-            Toast.makeText(this, "这台设备已经在列表里了", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.import_duplicate), Toast.LENGTH_SHORT).show()
             return
         }
         val t = trash.removeAt(idx)
@@ -1855,7 +2083,7 @@ class MainActivity : AppCompatActivity() {
         refreshAll(animateNumbers = true)
         updateBadgeEntry()
         checkBadges(announce = false)
-        Toast.makeText(this, "已恢复「" + nameOf(t.item) + "」", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.import_restored, nameOf(t.item)), Toast.LENGTH_SHORT).show()
     }
 
     private fun deleteForever(id: String) {
@@ -1863,7 +2091,8 @@ class MainActivity : AppCompatActivity() {
         DeviceStore.saveTrash(trash)
     }
 
-    private fun nameOf(item: DeviceItem): String = if (item.name.isEmpty()) "未命名" else item.name
+    private fun nameOf(item: DeviceItem): String =
+        if (item.name.isEmpty()) getString(R.string.trash_unnamed) else item.name
 
     /** 勋章只增不减：达成即点亮并记下时间，之后数字回落也不熄灭 */
     private fun checkBadges(announce: Boolean) {
@@ -1878,7 +2107,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateBadgeEntry() {
-        binding.tvBadgeEntryCount.text = badgeState.size.toString() + " / " + Badges.ALL.size
+        binding.tvBadgeEntryCount.text =
+            getString(R.string.sum_badge_progress, badgeState.size.toString(), Badges.ALL.size.toString())
     }
 
     /* ------------------------------ 主题 ------------------------------ */
@@ -1909,7 +2139,10 @@ class MainActivity : AppCompatActivity() {
         va.addListener(object : android.animation.AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: android.animation.Animator) {
                 applyTheme(to, heavy = true)
-                // 动画结束后同步系统控件主题；Activity 会被重建，滚动位置由 RecyclerView 自行恢复
+                // 动画结束后同步系统控件（日期选择器等）的昼夜状态。
+                // manifest 已经把 uiMode 放进 configChanges，appcompat 只在 Activity
+                // **没有**自行处理该配置时才 recreate —— 这里是原地换 Resources +
+                // onConfigurationChanged，Activity 不重建，滚动位置与所有状态都还在。
                 AppCompatDelegate.setDefaultNightMode(
                     if (dark) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
                 )
@@ -1997,6 +2230,8 @@ class MainActivity : AppCompatActivity() {
         b.tvEmptyTitle.setTextColor(t.text)
         b.tvEmptyDesc1.setTextColor(t.sub)
         b.tvEmptyDesc2.setTextColor(t.sub)
+        // 页脚那条 GitHub 用主色，看着像个链接
+        b.tvGithub.setTextColor(t.primary)
         b.btnEmptyAdd.background = roundedDrawable(t.primary, 20f, d)
         b.btnEmptyAdd.setTextColor(CardColors.whiteText)
 

@@ -331,7 +331,7 @@ object BackupStore {
 
     /** 导出文件名：device-ledger-20261010-2045.json */
     fun fileName(at: Long = System.currentTimeMillis()): String {
-        val c = java.util.Calendar.getInstance()
+        val c = java.util.Calendar.getInstance(java.util.Locale.ROOT)
         c.timeInMillis = at
         fun p(n: Int) = if (n < 10) "0$n" else n.toString()
         return "device-ledger-" + c.get(java.util.Calendar.YEAR).toString() +

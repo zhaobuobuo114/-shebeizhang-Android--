@@ -66,7 +66,7 @@ class KindTilesBinder(
             val icon = tile.view.findViewById<ImageView>(R.id.ivKindIcon)
             val label = tile.view.findViewById<TextView>(R.id.tvKindLabel)
             icon.setImageResource(kindIconRes(tile.kind.key))
-            label.text = tile.kind.label
+            label.text = container.context.getString(tile.kind.labelRes)
 
             if (tile.kind.key == selectedKey) {
                 label.tintTo(theme.primary, 1f, duration)
