@@ -128,7 +128,7 @@
     <string name="fmt_m">百万</string>
     <string name="fmt_wan">万</string>
     <string name="fmt_yi">億</string>
-    <string name="footer_github">私の GitHub：%1$s</string>
+    <string name="footer_github">私の GitHub</string>
     <string name="import_backup_unreadable">このバックアップは読み込めません</string>
     <string name="import_cancel">キャンセル</string>
     <string name="import_chooser_title">デバイス台帳を書き出す</string>

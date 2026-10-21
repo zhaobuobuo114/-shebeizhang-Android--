@@ -128,7 +128,7 @@
     <string name="fmt_m">M</string>
     <string name="fmt_wan">K</string>
     <string name="fmt_yi">B</string>
-    <string name="footer_github">My GitHub: %1$s</string>
+    <string name="footer_github">My GitHub</string>
     <string name="import_backup_unreadable">This backup can’t be read</string>
     <string name="import_cancel">Cancel</string>
     <string name="import_chooser_title">Export Device Ledger data</string>

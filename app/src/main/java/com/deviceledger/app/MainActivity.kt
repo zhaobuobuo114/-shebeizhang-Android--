@@ -13,6 +13,11 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.TextPaint
+import android.text.method.LinkMovementMethod
+import android.text.style.URLSpan
 import android.view.Gravity
 import android.view.View
 import android.widget.Toast
@@ -81,11 +86,16 @@ import java.util.Locale
 import java.util.Comparator
 
 /**
- * 页脚那条链接指向作者的 GitHub。写在这里而不是文案里：
- * 四门语言的 `footer_github` 都长成「我的 GitHub：{0}」，URL 是数据不是文案，
+ * 页脚那条链接指向作者的 GitHub。写在这里而不是文案里：URL 是数据不是文案，
  * 放进文案表会让它有机会被译歪。鸿蒙端 `pages/Index.ets` 有同一个常量，值必须一致。
+ *
+ * 屏幕上不再出现这串地址：它作为超链接挂在文案里字面量「GitHub」这个词上，
+ * 所以 `footer_github` 四门语言都只是「我的 GitHub」这一句。
  */
 private const val GITHUB_URL = "https://github.com/zhaobuobuo114"
+
+/** 四种语言的这条文案里都出现这个字面量，按它定位要上链接的那几个字 */
+private const val GITHUB_LINK_WORD = "GitHub"
 
 class MainActivity : AppCompatActivity() {
 
@@ -952,6 +962,8 @@ class MainActivity : AppCompatActivity() {
         press(binding.btnConfirmCancel) { showConfirm(false) }
         press(binding.btnConfirmDelete) { confirmDelete() }
         // 页脚那条 GitHub 不带按压缩放：它是一行文字，不是按钮
+        // 页脚整行可点（点「我的」两个字也该能打开），行里的「GitHub」另有一个 URLSpan
+        binding.tvGithub.movementMethod = LinkMovementMethod.getInstance()
         binding.tvGithub.setOnClickListener { openGitHub() }
     }
 
@@ -965,6 +977,28 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             // 机器上没有可打开的浏览器
         }
+    }
+
+    /**
+     * 页脚那一行的文字：地址不画出来，挂在「GitHub」这五个字上。
+     *
+     * 用 URLSpan 而不是只给整行挂点击：无障碍服务会把这几个字单独念成"链接"，
+     * 视觉上也有下划线和主色，跟"这行字里藏了个链接"的意图对得上。
+     * 万一某条译文里没有 "GitHub" 这个字面量，就退回普通整行文字 ——
+     * 行本身的点击还在（setupListeners 里那句 setOnClickListener），不会变成死链。
+     */
+    private fun githubFooter(t: AppTheme): CharSequence {
+        val label = getString(R.string.footer_github)
+        val at = label.indexOf(GITHUB_LINK_WORD)
+        if (at < 0) return label
+        val sp = SpannableString(label)
+        sp.setSpan(object : URLSpan(GITHUB_URL) {
+            override fun updateDrawState(ds: TextPaint) {
+                ds.color = t.primary
+                ds.isUnderlineText = true
+            }
+        }, at, at + GITHUB_LINK_WORD.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        return sp
     }
 
     private fun press(view: View, scale: Float = 0.92f, action: () -> Unit) {
@@ -1748,7 +1782,10 @@ class MainActivity : AppCompatActivity() {
             DataSheet.DataActions(
                 onExportFile = { exportLauncher.launch(BackupStore.fileName()) },
                 onShare = { shareSnapshot() },
-                onImportPick = { importLauncher.launch(arrayOf("application/json", "text/plain")) },
+                // 不按 mime 过滤：部分 ROM 把 .json 报成 octet-stream，
+                // 挑 MIME 会让选择器连用户自己刚导出的那份都不显示。
+                // 认不认得出是 parseJson 的事，读不出来会明确提示"这个文件里没有设备账数据"。
+                onImportPick = { importLauncher.launch(arrayOf("*/*")) },
                 onRestoreBackup = { slot -> askRestoreBackup(slot) },
                 onOpenTrash = { openTrashSheet() },
                 onOpenBadges = { openBadgeWall() },
@@ -1854,8 +1891,8 @@ class MainActivity : AppCompatActivity() {
         b.btnByAmount.setText(R.string.chart_by_amount)
         b.btnByCount.setText(R.string.chart_by_count)
         b.tvSortLabel.setText(R.string.sort_label)
-        // 页脚那条带 URL 参数，不能用 setText(R.string.x)：URL 是常量，文案表里只放句式
-        b.tvGithub.text = getString(R.string.footer_github, GITHUB_URL)
+        // 页脚：地址不显示，作为超链接挂在「GitHub」上；换语言要重画一次 span
+        b.tvGithub.text = githubFooter(theme)
         b.ivEmpty.setContentDescription(getString(R.string.cd_empty))
         b.ivTop.setContentDescription(getString(R.string.cd_top))
         b.btnUndo.setText(R.string.undo_button)
@@ -2230,8 +2267,9 @@ class MainActivity : AppCompatActivity() {
         b.tvEmptyTitle.setTextColor(t.text)
         b.tvEmptyDesc1.setTextColor(t.sub)
         b.tvEmptyDesc2.setTextColor(t.sub)
-        // 页脚那条 GitHub 用主色，看着像个链接
-        b.tvGithub.setTextColor(t.primary)
+        // 页脚：底色调成次要色，链接色由 span 自己画（换主题要重建成新配色）
+        b.tvGithub.setTextColor(t.sub)
+        b.tvGithub.text = githubFooter(t)
         b.btnEmptyAdd.background = roundedDrawable(t.primary, 20f, d)
         b.btnEmptyAdd.setTextColor(CardColors.whiteText)
 

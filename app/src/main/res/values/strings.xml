@@ -128,7 +128,7 @@
     <string name="fmt_m">百万</string>
     <string name="fmt_wan">万</string>
     <string name="fmt_yi">亿</string>
-    <string name="footer_github">我的 GitHub：%1$s</string>
+    <string name="footer_github">我的 GitHub</string>
     <string name="import_backup_unreadable">这份备份读不出来</string>
     <string name="import_cancel">取消</string>
     <string name="import_chooser_title">导出设备账数据</string>

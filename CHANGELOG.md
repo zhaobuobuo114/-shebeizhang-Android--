@@ -5,6 +5,38 @@
 
 ---
 
+## v2.0.2（2026-10-21）
+
+与鸿蒙版 v2.0.2 同一轮，版本号对齐：`versionName` 2.0.2、`versionCode` 19。两件事：
+**页脚 GitHub 链接收进文字里**、**导入选择器不再按 MIME 把用户自己的备份藏起来**。
+开屏条款确认页**安卓版保留不动**（那一轮只改鸿蒙，两端在这件事上从 v2.0.2 起有意不一致）。
+
+### 页脚那条 GitHub 链接收进文字里
+
+原来 `tvGithub` 整行是裸 URL。现在四门语言都只露出 `GitHub` 这一个词：
+`MainActivity.kt:990 githubFooter()` 用 `SpannableString` + 一个重写 `updateDrawState` 的 `URLSpan`
+（着色 + 下划线跟着主题走），`movementMethod = LinkMovementMethod` 只在链接段吃掉点击，
+非链接区仍走整行的 `setOnClickListener { openGitHub() }`。**词在文案里找不到时退回整行纯文本**，不硬切。
+主表 `footer_github` 随之去掉 `%1$s` 占位符（四语言重生成）。
+
+### 导入选择器放宽 MIME
+
+`onImportPick` 原来传 `arrayOf("application/json", "text/plain")`。部分 ROM 把 `.json` 报成
+`application/octet-stream`，被这个过滤一挡，**连用户自己刚导出的那份都不显示**——表现就是"找不到可用的已导出文件"。
+现在传 `arrayOf("*/*")`：认不认得出是 `BackupStore.parseJson` 的事，读不出来会明确提示
+"这个文件里没有设备账数据"（`import_unreadable`），不该由 MIME 替用户决定哪个文件是他的备份。
+
+### 顺带把鸿蒙那个"空壳导出"的疑心也量了安卓这边
+
+鸿蒙端查出导出写出 0 字节空壳（三个成因记在鸿蒙版 CHANGELOG v2.0.2）。安卓这条路径一直是对的，
+但既然怀疑就实测：新增根目录闸门 `_test_backup_roundtrip_android.py`，连着模拟器把
+导出 → 落盘 → 导入 → 合并整条跑完，**12 条断言 0 失败**——
+文件 2768 B、`counts.devices=12` 与数组自洽、导入选择器列出它（2.77 kB）、
+合并弹窗原文 "This file has 12 devices, 2 trash items and 12 badges"、合并后可见界面文字零变化。
+toast 不参与断言：这台模拟器不把 toast 暴露给 uiautomator 树，而弹窗里那几个数字比 toast 硬。
+
+---
+
 ## v2.0.1（2026-10-13）
 
 鸿蒙端修切语言崩溃时顺带查过来的一个小版本。与鸿蒙版 v2.0.1 同一轮，版本号对齐。
